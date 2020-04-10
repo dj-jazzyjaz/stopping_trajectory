@@ -1,0 +1,26 @@
+<package>
+  <name>stopping_trajectory</name>
+  <version>0.0.1</version>
+  <description>Simple stopping trajectory package</description>
+  <author email="jacheng@andrew.cmu.edu">Jasmine Cheng</author>
+  <maintainer email="jacheng@andrew.cmu.edu">Jasmine Cheng</maintainer>
+  <license>TODO</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <build_depend>roscpp</build_depend>
+  <build_depend>std_msgs</build_depend>
+  <build_depend>control_arch</build_depend>
+  <build_depend>geometry_utils</build_depend>
+  <build_depend>planning_arch</build_depend>
+  <build_depend>local_map_generator</build_depend>
+  <build_depend>parameter_utils</build_depend>
+  
+  <run_depend>roscpp</run_depend>
+  <run_depend>std_msgs</run_depend>
+  <run_depend>control_arch</run_depend>
+  <run_depend>geometry_utils</run_depend>
+  <run_depend>planning_arch</run_depend>
+  <run_depend>local_map_generator</run_depend>
+  <run_depend>parameter_utils</run_depend>
+</package>

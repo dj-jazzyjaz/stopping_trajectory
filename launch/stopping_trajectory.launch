@@ -1,0 +1,28 @@
+<launch>
+  <arg name="vehicle" default="$(optenv RIS_VEHICLE_NAME danaus06)"/>
+  <arg name="scenario" value="random_forest5"/>
+  <arg name="local_map_params_file" default="$(find local_map_generator)/config/local_map_parameters.yaml"/>
+
+  <!--Stopping Trajectory -->
+  <node pkg="stopping_trajectory" name="stopping_trajectory" type="stopping_trajectory" output="screen">
+    <remap from="~joy" to="/$(arg vehicle)/joy"/>
+    <remap from="~get_reference_state" to="get_reference_state"/>
+    <remap from="~moprim_library_vis" to="moprim_library_vis"/>
+    <remap from="~event" to="event"/>
+    <remap from="~flags" to="flags"/>
+  </node>
+
+   
+  <rosparam file="$(find planning_arch)/config/collision_avoidance.yaml"/>
+  <rosparam file="$(find stopping_trajectory)/config/stopping_trajectory.yaml"/>
+
+  <param name="config_file" type="string" value="$(arg local_map_params_file)"/>
+  <param name="calib_file"  type="string"
+          value="$(find sensor_calibration_record)/$(arg vehicle)/$(arg vehicle)_all_calibrations.yaml" />
+  <param name="body_frame"  type="string" value="$(arg vehicle)/body"/>
+  <param name="map_filename" value="$(find user_studies_launch)/map/$(arg scenario).ply"/>
+  
+  <group ns="$(arg vehicle)">
+  <node pkg="joy" name="joy_node" type="joy_node" output="screen"/>
+  </group>
+</launch>
