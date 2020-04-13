@@ -62,7 +62,7 @@ void StoppingTrajectory::generateCollisionFreeWaypoints(state_t state, const ros
     traj_.markers.clear();
     std::clock_t start;
     double compute_duration;
-    double query_duration;
+    double query_duration;;
     start = std::clock();
     
     // Set duration and interval
@@ -71,9 +71,9 @@ void StoppingTrajectory::generateCollisionFreeWaypoints(state_t state, const ros
     // Get potential escape points
     std::vector<gu::Vec3> escapePoints;
     getEscapePoints(state.pos, state.vel, state.yaw(), escapePoints);
-    
     // No escape points, generate stopping trajectory without goal point
     if (escapePoints.size() == 0) {
+        std::cout << "No escape points, generate stopping trajectory without goal point" << std::endl;
         generateWaypoints(state, reference_time);
         return;
     }
@@ -157,9 +157,6 @@ void StoppingTrajectory::generateWaypoints(state_t state, const ros::Time &refer
     float interval = 0.01;
     int num_intervals = 101; //((float)duration.nsec)/interval + 1;
     ros::Duration duration(1);
-    std::cout << "num intervals: " + num_intervals << std::endl;
-    std::cout << "Populate trajectory, run populateTrajectory" << std::endl;
-
     std::vector<std::vector<double>> polyCoeffs;
     getPolynomials(state, duration, polyCoeffs);
     std::vector<state_t> traj_wpts;
@@ -170,11 +167,9 @@ void StoppingTrajectory::generateWaypoints(state_t state, const ros::Time &refer
 void StoppingTrajectory::publishTrajectory(std::vector<state_t> traj_wpts, float interval, ros::Duration duration)
 {
     control_arch::Waypoints msg;
-    std::cout << "Create traj message" << std::endl;
     Waypoints traj(traj_wpts, interval);
     traj.toMessage(msg);
 
-    std::cout << "Publish message" << std::endl;
     msg.header.stamp = ros::Time::now();
     msg.duration = duration;
     msg.start_time = ros::Time::now();

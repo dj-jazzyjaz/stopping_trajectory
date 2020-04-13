@@ -4,7 +4,8 @@
   <arg name="local_map_params_file" default="$(find local_map_generator)/config/local_map_parameters.yaml"/>
 
   <!--Stopping Trajectory -->
-  <node pkg="stopping_trajectory" name="stopping_trajectory" type="stopping_trajectory" output="screen">
+  <node pkg="stopping_trajectory" name="stopping_trajectory" type="stopping_trajectory" output="screen"
+  >
     <remap from="~joy" to="/$(arg vehicle)/joy"/>
     <remap from="~get_reference_state" to="get_reference_state"/>
     <remap from="~moprim_library_vis" to="moprim_library_vis"/>

@@ -12,10 +12,9 @@ namespace su = sample_utils;
  * Generates a rectangular prism grid of points, with dimensions based on parameters grid_length_ 
  * and grid_width_ and vel magnitude. Uses method specified by sample_method to choose points. 
  * */
-void StoppingTrajectory::getEscapePoints(gu::Vec3& pos, gu::Vec3& vel, double yaw, std::vector<gu::Vec3> escapePoints){
+void StoppingTrajectory::getEscapePoints(gu::Vec3& pos, gu::Vec3& vel, double yaw, std::vector<gu::Vec3>& escapePoints){
   std::clock_t sample_start = std::clock();
   generateGridPoints(pos, vel, yaw, escapePoints);
-  
   // Log timing info
   double sample_duration = (std::clock() - sample_start) / (double) CLOCKS_PER_SEC;
   sample_time.push_back(sample_duration);
@@ -45,7 +44,7 @@ float StoppingTrajectory::getCost(gu::Vec3& escape_point, gu::Vec3& current_pos,
 /** @brief Generates a rectangular prism meshgrid with corners located at (x1, y1) and (x2, y2), 
  * and fixed z height of 2.
  * */
-void StoppingTrajectory::getRectangleGrid(double x1, double x2, double y1, double y2, std::vector<gu::Vec3> gridPts) {
+void StoppingTrajectory::getRectangleGrid(double x1, double x2, double y1, double y2, std::vector<gu::Vec3>& gridPts) {
   if(x2-x1 < sample_width_ || y2-y1 < sample_length_) {
     return;
   }
@@ -68,7 +67,7 @@ void StoppingTrajectory::getRectangleGrid(double x1, double x2, double y1, doubl
 /** @brief Generates points in rectangular prism grid, centered about the velocity vector of the 
  * vehicle, with dimensions based off the velocity and parameters grid_length_ and grid_width_.
  * */
-void StoppingTrajectory::generateGridPoints(gu::Vec3& pos, gu::Vec3& vel, double yaw, std::vector<gu::Vec3> rect_pts) {
+void StoppingTrajectory::generateGridPoints(gu::Vec3& pos, gu::Vec3& vel, double yaw, std::vector<gu::Vec3>& rect_pts) {
   double gridLength = grid_length_ * vel.norm();
   double gridWidth = grid_width_ * vel.norm();
 

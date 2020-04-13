@@ -11,14 +11,14 @@ namespace stu = stats_utils;
 /** @brief Sort escape_points by corresponding costs, where costs[i] is the cost for escape_points[i].
  * Also sorts `costs` in place.
  * 
- * */
+ */
 void StoppingTrajectory::sortByCost(std::vector<float>& costs, 
-                          std::vector<gu::Vec3> escape_points) {  
-  // Sort costs via distance
+                          std::vector<gu::Vec3>& escape_points) {  
+  // Sort costs
   std::vector<size_t> costs_dist_sorted_idx;
   vu::Sort<float>(costs, &costs, &costs_dist_sorted_idx);
 
-  // Push escape points by sorted distance
+  // Push escape points by sorted cost
   std::vector<gu::Vec3> escape_points_sorted;
   for(uint i = 0; i < escape_points.size(); i++) {
     escape_points_sorted.push_back(escape_points[costs_dist_sorted_idx[i]]);
@@ -28,7 +28,7 @@ void StoppingTrajectory::sortByCost(std::vector<float>& costs,
 
 /** @brief Calculates cost for each point in `escape_points` and stores cost in `costs`.
  *  Removes points from `escape_points` if not in free space.
- * */
+ */
 void StoppingTrajectory::getFreePoints(gu::Vec3& pos, gu::Vec3& vel, 
                     std::vector<gu::Vec3>& escape_points, 
                     std::vector<float>& costs) {  
@@ -36,6 +36,7 @@ void StoppingTrajectory::getFreePoints(gu::Vec3& pos, gu::Vec3& vel,
   for(uint i = 0; i < escape_points.size(); i++){
     float dist_from_obstacle = global_map_.find_nearest_neighbor(escape_points[i](0), 
                         escape_points[i](1), escape_points[i](2));
+    // Keep escape point if not within collision_radius_
     if(dist_from_obstacle > collision_radius_) {
       costs.push_back(getCost(escape_points[i], pos, vel, dist_from_obstacle));
       free_escape_points.push_back(escape_points[i]);
@@ -46,11 +47,10 @@ void StoppingTrajectory::getFreePoints(gu::Vec3& pos, gu::Vec3& vel,
 
 /** @brief Samples from given `escape_points` using method specified by sample_method. Returns 
  * sampled points.
- * */
+ */
 std::vector<gu::Vec3> StoppingTrajectory::sampleEscapePoints(gu::Vec3& pos, gu::Vec3& vel, 
-                    std::vector<gu::Vec3> escape_points, SampleLog log_entry) {  
+                    std::vector<gu::Vec3>& escape_points, SampleLog& log_entry) {  
   int num_escape_points_init = escape_points.size();
-  
   std::clock_t clock_start = std::clock();
   std::vector<float> costs;
   getFreePoints(pos, vel, escape_points, costs);
@@ -68,43 +68,17 @@ std::vector<gu::Vec3> StoppingTrajectory::sampleEscapePoints(gu::Vec3& pos, gu::
   // Weighted random sample
   if(sample_method_ == weighted_random) {
     std::clock_t sample_clock_start = std::clock();
-    std::vector<float> sampled_costs;
-    std::vector<gu::Vec3> sampled_points;
-
-    // Get indexes from weighted sample using costs
-    std::vector<int> sample_idxs = weightedSample(costs);
-
-    // Add points at sample_idxs 
-    for (uint i = 0; i < sample_idxs.size(); i++){
-      int idx = sample_idxs[i];
-      sampled_points.push_back(escape_points[idx]);
-      sampled_costs.push_back(costs[idx]);
-    }
-    costs = sampled_costs;
-    escape_points = sampled_points;
+    weightedRandomSample(costs, escape_points);
     log_entry.t_sample = (std::clock() - sample_clock_start) / (double) CLOCKS_PER_SEC;
   }
+
   clock_start = std::clock();
   sortByCost(costs, escape_points);
 
   // Stratified sample
   if(sample_method_ == stratified) {
     std::clock_t sample_clock_start = std::clock();
-
-    // Get sampled indexs
-    std::vector<int> sample_idxs = stratifiedSample(costs, escape_points);
-    
-    std::vector<gu::Vec3> sampled_points;
-    std::vector<float> sampled_costs;
-    for(uint i = 0; i < sample_idxs.size(); i++) {
-      sampled_points.push_back(escape_points[sample_idxs[i]]);
-      sampled_costs.push_back(costs[sample_idxs[i]]);
-    }
-
-    sortByCost(sampled_costs, sampled_points);
-    escape_points = sampled_points;
-    costs = sampled_costs;
-
+    stratifiedSample(costs, escape_points);
     log_entry.t_sample = (std::clock() - sample_clock_start) / (double) CLOCKS_PER_SEC;
   }
 
@@ -122,13 +96,17 @@ std::vector<gu::Vec3> StoppingTrajectory::sampleEscapePoints(gu::Vec3& pos, gu::
   log_entry.t_sort = sort_duration;
   log_entry.t_sort_per_point = sort_duration/escape_points.size();
   log_entry.num_sample_points = escape_points.size();
-  
   sort_log.push_back(log_entry);
   visualizeEscapePoints(escape_points, costs);
+  std::cout << "C6" <<std::endl;
   return escape_points;
 }
 
-SampleLog StoppingTrajectory::logSampleStatistics(std::vector<gu::Vec3> escapePoints, SampleLog log_entry) { 
+/**
+ * @brief Calculates statistics on a sample of escape points, including variance and standard deviation
+ * of the distribution of points.
+ * */
+SampleLog StoppingTrajectory::logSampleStatistics(std::vector<gu::Vec3>& escapePoints, SampleLog log_entry) { 
   // Get individual vectors for x, y and z
   std::vector<double> x, y, z;
   for(uint i = 0; i < escapePoints.size(); i++){
@@ -159,20 +137,52 @@ SampleLog StoppingTrajectory::logSampleStatistics(std::vector<gu::Vec3> escapePo
 }
 
 /**
+ * @brief Sample points based on a weighted sample relative to costs,
+ * where points with lower costs are more likely to be chosen.
+ * */
+void StoppingTrajectory::weightedRandomSample(std::vector<float>& costs, std::vector<gu::Vec3>& escape_points) {
+  // Negate costs so that larger costs are less likely to be chosen
+  for(uint i = 0; i < costs.size(); i++) {
+    costs[i] = -1 * costs[i];
+  }
+
+  // Noramlize the costs and perform sample
+  std::vector<float> scaled_costs;
+  vu::RescaleMinMax(costs, &scaled_costs);
+  vu::Normalize(scaled_costs, &costs);
+  std::vector<int> sample_idxs = su::DiscreteSampleWithoutReplacement(costs, sample_num_);
+
+  // Add points at sampled indexes
+  std::vector<float> sampled_costs;
+  std::vector<gu::Vec3> sampled_points; 
+  for (uint i = 0; i < sample_idxs.size(); i++){
+    int idx = sample_idxs[i];
+    sampled_points.push_back(escape_points[idx]);
+    sampled_costs.push_back(costs[idx]);
+  }
+
+  // Update costs and escape_points to the sample
+  costs = sampled_costs;
+  escape_points = sampled_points;
+}
+
+/**
  * @brief Returns indexes of chosen sample points using a straified, where the layers are specified 
  * by the parameters strat_sample_fraction_ and strat_sample_num_
  * */
-std::vector<int> StoppingTrajectory::stratifiedSample(std::vector<float>& sorted_costs, std::vector<gu::Vec3>& escape_points) {
+void StoppingTrajectory::stratifiedSample(std::vector<float>& sorted_costs, std::vector<gu::Vec3>& escape_points) {
+  std::clock_t sample_clock_start = std::clock();
   int num_points = sorted_costs.size();
 
-  // TODO: Probably can get rid of this
+  // Negate costs to that higher costs are less likely to be sampled
+  // TODO: Could potentially get rid of sampling weights since costs are similar
   for(uint i = 0; i < sorted_costs.size(); i++) {
     sorted_costs[i] = -1 * sorted_costs[i];
   }
 
   std::vector<int> sample_idxs;
   int start_idx = 0;
-  // Sample from each stratified layer
+  // Get indexes by sampling from each stratified layer
   for(uint i = 0; i < strat_sample_fraction_.size(); i++) {
     int end_idx = start_idx + floor(strat_sample_fraction_[i] * num_points);
     std::vector<int> slice_idxs = sampleSlice(sorted_costs, start_idx, end_idx, strat_sample_num_[i]);
@@ -180,28 +190,22 @@ std::vector<int> StoppingTrajectory::stratifiedSample(std::vector<float>& sorted
     start_idx = end_idx + 1; 
   }
 
+  // Unnegate costs
   for(uint i = 0; i < sorted_costs.size(); i++) {
     sorted_costs[i] = -1 * sorted_costs[i];
   }
 
-  return sample_idxs;
-}
-
-/**
- * @brief Returns indexes of chosen sample points based on a weighted sample relative to costs,
- * where points with lower costs are more likely to be chosen.
- * */
-std::vector<int> StoppingTrajectory::weightedSample(std::vector<float> costs) {
-  // Multiply costs by -1 so that better points->lower cost->higher probability
-  for(uint i = 0; i < costs.size(); i++) {
-    costs[i] = -1 * costs[i];
+  // Push points at sampled indexes onto sampled points
+  std::vector<gu::Vec3> sampled_points;
+  std::vector<float> sampled_costs;
+  for(uint i = 0; i < sample_idxs.size(); i++) {
+      sampled_points.push_back(escape_points[sample_idxs[i]]);
+      sampled_costs.push_back(sorted_costs[sample_idxs[i]]);
   }
-  std::vector<float> scaled_costs;
-  vu::RescaleMinMax(costs, &scaled_costs);
-  vu::Normalize(scaled_costs, &costs);
-  std::vector<int> sampled_points = su::DiscreteSampleWithoutReplacement(costs, sample_num_);
+  sortByCost(sampled_costs, sampled_points);
+  escape_points = sampled_points;
+  sorted_costs = sampled_costs;
 
-  return sampled_points;
 }
 
 /**

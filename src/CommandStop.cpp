@@ -63,9 +63,6 @@ float StoppingTrajectory::freePointsRatio(state_t ref_state)
  * */
 void StoppingTrajectory::commandStop(const ros::TimerEvent &)
 {
-  float *neigh_point = new float[3];
-  
-
   if (!flagEnabledQ("teleop")) return;
 
   ros::Time ref_time;
@@ -78,6 +75,8 @@ void StoppingTrajectory::commandStop(const ros::TimerEvent &)
   if (ref_state.vel.norm() < compute_thresh_) return;
   traj_.markers.clear();
 
+  // Get the ratio of free points and update derivative of free points ratio
+  // TODO: take this out because it's not useful?
   float ratio_new = freePointsRatio(ref_state);
   float delta_free_points_ratio = free_points_ratio - ratio_new;
   if (delta_free_points_ratio > delta_free_thresh_)
@@ -88,55 +87,43 @@ void StoppingTrajectory::commandStop(const ros::TimerEvent &)
   {
     below_threshold_count = 0;
   }
-
   free_points_ratio = ratio_new;
 
+  // Get distance and location of nearest obstacle
+  float *neigh_point = new float[3];
   float dist_from_obstacle = global_map_.find_nearest_neighbor(ref_state.pos.x(), ref_state.pos.y(), ref_state.pos.z(), neigh_point);
 
   // get the angle between vector from position->obstacle relative to current yaw
   float offset_x = neigh_point[0] - ref_state.pos.x();
   float offset_y = neigh_point[1] - ref_state.pos.y();
   // Since x is the direction of vehicle heading when yaw is 0, take atan(y, x)
-  // TODO: check for wrap around edge cases
+  // Take absolute value and min between 2*pi-angle and angle to get true offset
   float offset_angle = gu::math::atan2(offset_y, offset_x) - (float)ref_state.yaw();
-  float stop_cost = fabs(offset_angle) + 0.7 * dist_from_obstacle;
+  offset_angle = gu::math::fmin(fabs(offset_angle), (float)(2*3.142 - fabs(offset_angle)));
+ 
+  // Calcuate stop cost as a weighted sum of distance, angle and velocity
+  float stop_cost = offset_angle + stop_dist_weight_ * dist_from_obstacle - stop_bias_ - stop_vel_weight_ * ref_state.vel.norm(); 
 
-  if (dist_from_obstacle < stopping_radius_ || 
-  below_threshold_count > delta_count_thresh_ || 
-  free_points_ratio < free_ratio_thresh_ || stop_cost < 1.5)
-  {
-    std::cout << "Within caution zone: " <<  
-    "Conseq below thresh: " << below_threshold_count << 
-    ", Delta free ratio:" << delta_free_points_ratio << 
-    ", Free ratio:" << free_points_ratio << 
-    ", Dist:" << dist_from_obstacle << 
-    ", Angle:" << offset_angle * 180/3.14 << " deg, " << offset_angle <<
-    ", Stop Cost:" << stop_cost << std::endl;
-    std::cout << "Conditions: " << 
-    (below_threshold_count > delta_count_thresh_) << "," << 
-    (free_points_ratio < free_ratio_thresh_) << "," << 
-    (dist_from_obstacle < stopping_radius_) << "," << 
-    (fabs(offset_angle) < stopping_angle_) << std::endl;
-
+  std::cout << "Stop conditions" << std::endl;
+  std::cout << stop_cost << std::endl;
+  std::cout << below_threshold_count << "/" << delta_count_thresh_ << std::endl;
+  std::cout << delta_free_points_ratio << std::endl;
+  std::cout << free_points_ratio << std::endl;
+  std::cout << ref_state.vel.norm() << std::endl;
+  std::cout << dist_from_obstacle << std::endl;
+  std::cout << offset_angle << std::endl;
   
-    if (stop_cost < 1.5) {//stopping_angle_{
-        std::cout << "GENERATE STOP" << stop_cost << ", " << (stop_cost < 1.5) << std::endl;
-        generateCollisionFreeWaypoints(ref_state, ref_time);
-        std_msgs::String event_msg;
-        event_msg.data = "HoverEvent";
-        event_pub_.publish(event_msg);
-    }
+  /*if (dist_from_obstacle < stopping_radius_ || 
+  below_threshold_count > delta_count_thresh_ || 
+  free_points_ratio < free_ratio_thresh_ || stop_cost < 0)*/
+  if (stop_cost < 0) {
+    std::cout << "GENERATE STOP" << std::endl;
+    generateCollisionFreeWaypoints(ref_state, ref_time);
+    std_msgs::String event_msg;
+    event_msg.data = "HoverEvent";
+    event_pub_.publish(event_msg);
   }
-  else
-  {
-    std::cout << "Safe" <<  
-    "Conseq below thresh: " << below_threshold_count << 
-    ", Delta free ratio:" << delta_free_points_ratio << 
-    ", Free ratio:" << free_points_ratio << 
-    ", Dist:" << dist_from_obstacle << 
-    ", Angle:" << offset_angle * 180/3.14 << " deg, " << offset_angle << 
-    ", Stop Cost:" << stop_cost << std::endl;
-  }
+  
 
   delete[] neigh_point;
 }

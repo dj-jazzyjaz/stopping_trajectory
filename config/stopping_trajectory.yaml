@@ -12,7 +12,10 @@ command_stop:
   stopping_angle: 0.6 # threshold for angle offset of nearest obstacle from current heading 
   free_ratio_thresh: 0.3   # threshold for ratio of free points to sampled points
   delta_free_thresh: 0.02 # threshold for delta free points ratio from previous sampling
-  delta_count_thresh: 6    # number of consecutive samples below delta_free_thresh until stop commanded
+  delta_count_thresh: 4    # number of consecutive samples below delta_free_thresh until stop commanded
+  dist_weight: 0.9 # Scale the angle cost when calculating stop cost
+  bias: 1.2 # Bias when calculating stop cost
+  vel_weight: 0.2 # Scale velocity cost when calculating stop cost
 escape_point_generation:
   grid_length: 1
   grid_width: 1
@@ -24,4 +27,4 @@ sample_num: 100 # number of points to keep after sampling, to generate trajector
 stratified_sample:
   sample_fraction: [0.01, 0.09, 0.4, 0.5] # percent of points for each strata, ordered highest to lowest strata. Should sum to 1.
   sample_num: [10, 40, 30, 20] # max number of points to sample from each strata
-compute_thresh: 0.001 # do not attempt computing escape points if vehicle velocity is below this threshold
+compute_thresh: 0.01 # do not attempt computing escape points if vehicle velocity is below this threshold

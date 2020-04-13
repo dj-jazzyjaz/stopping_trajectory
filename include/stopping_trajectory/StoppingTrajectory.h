@@ -71,8 +71,8 @@ private:
     // Compute Trajectory
     std::vector<double> getCoefficients(double pos, double vel, double acc, double jerk, double snap, double stopping_time);
     std::vector<double> getCoefficientsWithGoalPos(double pos, double vel, double acc, double jerk, double goal_pos, double stopping_time);
-    void getPolynomials(const state_t& state, ros::Duration duration, std::vector<std::vector<double>> coefficients); 
-    void getPolynomialsWithPos(const state_t& state, gu::Vec3 goal_pos, double t_stop, std::vector<std::vector<double>> coefficients);
+    void getPolynomials(const state_t& state, ros::Duration duration, std::vector<std::vector<double>>& coefficients); 
+    void getPolynomialsWithPos(const state_t& state, gu::Vec3 goal_pos, double t_stop, std::vector<std::vector<double>>& coefficients);
     void populateTrajectory(const ros::Time &reference_time, int traj_length, const std::vector<std::vector<double>>& coefficients, ros::Duration duration, double step, std::vector<state_t> &traj);
     bool checkTrajectoryCollision(const std::vector<state_t>& traj);
     bool checkTrajectoryCollisionGlobal(const std::vector<state_t>& traj);
@@ -81,21 +81,20 @@ private:
     double getTrajectoryDuration(state_t state, gu::Vec3 goal_pos);
 
     // Escape Points
-    void getEscapePoints(gu::Vec3& pos, gu::Vec3& vel, double yaw, std::vector<gu::Vec3> escapePoints);
-    void getRectangleGrid(double x1, double x2, double y1, double y2, std::vector<gu::Vec3> rectangleGrid);
-    void generateGridPoints(gu::Vec3& pos, gu::Vec3& vel, double yaw, std::vector<gu::Vec3> gridPoints);
+    void getEscapePoints(gu::Vec3& pos, gu::Vec3& vel, double yaw, std::vector<gu::Vec3>& escapePoints);
+    void getRectangleGrid(double x1, double x2, double y1, double y2, std::vector<gu::Vec3>& rectangleGrid);
+    void generateGridPoints(gu::Vec3& pos, gu::Vec3& vel, double yaw, std::vector<gu::Vec3>& gridPoints);
     float point_to_line_distance(gu::Vec3& point, gu::Vec3& line_pos, gu::Vec3& line_vel);
     float getCost(gu::Vec3& escape_point, gu::Vec3& current_pos, gu::Vec3& current_vel, float dist_from_obstacle);
    
     // Sample Points
     void getFreePoints(gu::Vec3& pos, gu::Vec3& vel, std::vector<gu::Vec3>& escape_points, std::vector<float>& costs);
-    void sortByCost(std::vector<float>& costs, std::vector<gu::Vec3> escape_points);
-    std::vector<gu::Vec3> sampleEscapePoints(gu::Vec3& pos, gu::Vec3& vel, std::vector<gu::Vec3> escape_points, SampleLog log_entry);
-    std::vector<int> weightedSample(std::vector<float> costs);
-    std::vector<int> stratifiedSample(std::vector<float>& sorted_costs, std::vector<gu::Vec3>& escape_points);
+    void sortByCost(std::vector<float>& costs, std::vector<gu::Vec3>& escape_points);
+    std::vector<gu::Vec3> sampleEscapePoints(gu::Vec3& pos, gu::Vec3& vel, std::vector<gu::Vec3>& escape_points, SampleLog& log_entry);
+    void stratifiedSample(std::vector<float>& sorted_costs, std::vector<gu::Vec3>& escape_points);
     std::vector<int> sampleSlice(std::vector<float> sorted_costs, int start, int end, int num_sample);
-    SampleLog logSampleStatistics(std::vector<gu::Vec3> escapePoints, SampleLog log_entry);
-
+    SampleLog logSampleStatistics(std::vector<gu::Vec3>& escapePoints, SampleLog log_entry);
+    void weightedRandomSample(std::vector<float>& costs, std::vector<gu::Vec3>& escape_points);
     // Visualization
     visualization_msgs::Marker getTrajectoryVis(std::vector<state_t> traj_path);
     void publishTrajectoryVis();
@@ -124,6 +123,9 @@ private:
     float delta_free_thresh_;
     int delta_count_thresh_; 
     float compute_thresh_;
+    float stop_dist_weight_;
+    float stop_vel_weight_;
+    float stop_bias_;
    
     // Sample variables
     int sample_length_n;

@@ -52,14 +52,8 @@ bool StoppingTrajectory::initialize(const ros::NodeHandle &n)
     free_points_ratio = 0;
     below_threshold_count = 0;
     event_pub_ = nh.advertise<std_msgs::String>("event", 0, true);
-    stop_timer_ = nh.createTimer(ros::Duration(0.1), &StoppingTrajectory::commandStop, this);
-    
-    //displayEscapePoints();
-    // Publishes "Hover" event messages
-    
-    // Run CommandStop in background
-    // commandStop();
-  }
+    stop_timer_ = nh.createTimer(ros::Duration(0.05), &StoppingTrajectory::commandStop, this);
+  } 
 
    ROS_INFO("[Stopping Trajectory] stopping_trajectory initialzed");
   return true;
@@ -111,6 +105,9 @@ void StoppingTrajectory::getParams()
   pu::get("command_stop/free_ratio_thresh", free_ratio_thresh_);
   pu::get("command_stop/delta_free_thresh", delta_free_thresh_);
   pu::get("command_stop/delta_count_thresh", delta_count_thresh_);
+  pu::get("command_stop/dist_weight", stop_dist_weight_);
+  pu::get("command_stop/vel_weight", stop_vel_weight_);
+  pu::get("command_stop/bias", stop_bias_);
   pu::get("compute_thresh", compute_thresh_);
 
   red_.a = 1;

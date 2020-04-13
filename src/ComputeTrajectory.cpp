@@ -111,14 +111,14 @@ std::vector<double> StoppingTrajectory::getCoefficientsWithGoalPos(double pos, d
  * @param coefficients [out] Vector in which to write the computed coefficients
  * */
 void StoppingTrajectory::getPolynomials(const state_t& state, 
-  ros::Duration duration, std::vector<std::vector<double>> coefficients)
+  ros::Duration duration, std::vector<std::vector<double>>& coefficients)
 {
   double t_stop = (double)duration.sec;
   for (int i = 0; i < 3; i++)
   {
     coefficients.push_back(getCoefficients(state.pos.data[i], state.vel.data[i], state.acc.data[i], 
                                           state.jerk.data[i], state.snap.data[i], t_stop));
-  }
+  }  
   coefficients.push_back(getCoefficients(state.yaw(), state.dyaw, state.d2yaw, state.d3yaw, 0, t_stop));
 }
 
@@ -129,7 +129,7 @@ void StoppingTrajectory::getPolynomials(const state_t& state,
  * @param coefficients [out] Vector in which to write the computed coefficients
  * */
 void StoppingTrajectory::getPolynomialsWithPos(const state_t& state, 
-  gu::Vec3 goal_pos, double t_stop, std::vector<std::vector<double>> coefficients)
+  gu::Vec3 goal_pos, double t_stop, std::vector<std::vector<double>>& coefficients)
 {
   for (int i = 0; i < 3; i++)
   {
