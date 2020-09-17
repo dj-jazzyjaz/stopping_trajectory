@@ -17,8 +17,8 @@ command_stop:
   bias: 1.2 # Bias when calculating stop cost
   vel_weight: 0.2 # Scale velocity cost when calculating stop cost
 escape_point_generation:
-  grid_length: 1
-  grid_width: 1
+  grid_length: 1 # Scale of sample space length, which is based on velocity norm
+  grid_width: 1 # Scale sample space width, TODO IMPROVE THIS COMMENT
   sample_length: 0.3 # discretization interval of points to sample
   sample_width: 0.3  # discretization interval of points to sample
   sample_height: 0.3
@@ -28,3 +28,4 @@ stratified_sample:
   sample_fraction: [0.01, 0.09, 0.4, 0.5] # percent of points for each strata, ordered highest to lowest strata. Should sum to 1.
   sample_num: [10, 40, 30, 20] # max number of points to sample from each strata
 compute_thresh: 0.01 # do not attempt computing escape points if vehicle velocity is below this threshold
+record: 0 # 0 for should not log, 1 otherwise

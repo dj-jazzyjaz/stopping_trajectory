@@ -56,6 +56,7 @@ bool StoppingTrajectory::initialize(const ros::NodeHandle &n)
   } 
 
    ROS_INFO("[Stopping Trajectory] stopping_trajectory initialzed");
+   record_ = true;
   return true;
 }
 
@@ -109,6 +110,7 @@ void StoppingTrajectory::getParams()
   pu::get("command_stop/vel_weight", stop_vel_weight_);
   pu::get("command_stop/bias", stop_bias_);
   pu::get("compute_thresh", compute_thresh_);
+  pu::get("log", log_);
 
   red_.a = 1;
   red_.r = 1;

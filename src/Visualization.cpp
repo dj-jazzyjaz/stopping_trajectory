@@ -144,6 +144,8 @@ void StoppingTrajectory::visualizeEscapePoints(std::vector<gu::Vec3> escape_poin
     marker.pose.position = gr::toPoint(escape_points[i]);
     // marker.color = red_;
 
+    // Markers that are more red indicate lower costs, markers that are more blue
+    // indicate higher costs
     std_msgs::ColorRGBA color;
     color.a = 1;
     color.r = std::min(1.0, 0.01 * i);
@@ -156,29 +158,21 @@ void StoppingTrajectory::visualizeEscapePoints(std::vector<gu::Vec3> escape_poin
   escape_points_vis_pub_.publish(marker_array_);
 }
 
-void StoppingTrajectory::setUpFileWriting(const std::string& saveto_directory){
-  record_ = true;
-
-  // Log file
-  std::string log_filename = saveto_directory + std::string("/log.txt");
-  log_file_.open(log_filename.c_str());
-
-}
-
-void StoppingTrajectory::writeToLog(){
+void StoppingTrajectory::writeLog(){
   if (record_) {
     double stddev;
     double query_time = stats_utils::Average(avg_query_time, &stddev);
-    std::cout << "Average query time per escape point" << 1000*query_time << std::endl;
-    std::cout << "Average sample time" <<  1000*stats_utils::Average(sample_time, &stddev) << std::endl;
+    std::cout << "Average query time per escape point (ms)" << 1000*query_time << std::endl;
+    std::cout << "Average sample time (ms)" <<  1000*stats_utils::Average(sample_time, &stddev) << std::endl;
 
     std::vector<double> cost_duration;
     std::vector<double> cost_avg;
     std::vector<double> filtered_points;
     std::vector<double> sort_duration;
     std::vector<double> sort_avg;
-    for(uint i = 0; i < sort_log.size(); i++) {
-      SampleLog s = sort_log[i];
+    
+    for(uint i = 0; i < sample_log.size(); i++) {
+      SampleLog s = sample_log[i];
       std::cout << "# Points, # Free-space points, # Sample points, Sample Width, Sample Length, Variance, Stdev, Sample time" << std::endl;
       std::cout << s.num_points_initial << "\n"
         << s.num_free_points << "\n"
@@ -195,6 +189,7 @@ void StoppingTrajectory::writeToLog(){
       sort_duration.push_back(s.t_sort);
       sort_avg.push_back(s.t_sort_per_point);
     }
+
     double cost_time = stats_utils::Average(cost_duration, &stddev);
     double cost_avg_time = stats_utils::Average(cost_avg, &stddev);
     double filtered_points_avg = stats_utils::Average(filtered_points, &stddev);
@@ -203,9 +198,6 @@ void StoppingTrajectory::writeToLog(){
     
     std::cout << "Cost time, Cost per point time, # filtered points, Sort time, Sort time per point" << std::endl;
     std::cout << cost_time*1000 << "\n" << cost_avg_time*1000 << "\n" << filtered_points_avg << "\n" << sort_log*1000 << "\n" << sort_avg_time*1000 << std::endl;
-    
-    log_file_<< "Number of trees created," << 1 << ",NaN, NaN,NaN"<< std::endl;
-    log_file_.close();
   }
 
 

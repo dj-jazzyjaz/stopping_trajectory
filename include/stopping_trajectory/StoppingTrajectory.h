@@ -89,7 +89,7 @@ private:
    
     // Sample Points
     void getFreePoints(gu::Vec3& pos, gu::Vec3& vel, std::vector<gu::Vec3>& escape_points, std::vector<float>& costs);
-    void sortByCost(std::vector<float>& costs, std::vector<gu::Vec3>& escape_points);
+    double sortByCost(std::vector<float>& costs, std::vector<gu::Vec3>& escape_points);
     std::vector<gu::Vec3> sampleEscapePoints(gu::Vec3& pos, gu::Vec3& vel, std::vector<gu::Vec3>& escape_points, SampleLog& log_entry);
     void stratifiedSample(std::vector<float>& sorted_costs, std::vector<gu::Vec3>& escape_points);
     std::vector<int> sampleSlice(std::vector<float> sorted_costs, int start, int end, int num_sample);
@@ -161,9 +161,8 @@ private:
     int below_threshold_count;
 
     // Logging
-    void setUpFileWriting(const std::string& saveto_directory);
-    void writeToLog();
-    std::vector<SampleLog> sort_log;
+    void writeLog();
+    std::vector<SampleLog> sample_log;
     std::vector<double> sample_time;
     std::vector<double> avg_query_time;
     std::ofstream log_file_;

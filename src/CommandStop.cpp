@@ -102,20 +102,18 @@ void StoppingTrajectory::commandStop(const ros::TimerEvent &)
   offset_angle = gu::math::fmin(fabs(offset_angle), (float)(2*3.142 - fabs(offset_angle)));
  
   // Calcuate stop cost as a weighted sum of distance, angle and velocity
-  float stop_cost = offset_angle + stop_dist_weight_ * dist_from_obstacle - stop_bias_ - stop_vel_weight_ * ref_state.vel.norm(); 
+  float stop_cost = offset_angle + stop_dist_weight_ * dist_from_obstacle 
+    - stop_vel_weight_ * ref_state.vel.norm() - stop_bias_; 
 
-  std::cout << "Stop conditions" << std::endl;
+  /*std::cout << "Stop conditions" << std::endl;
   std::cout << stop_cost << std::endl;
   std::cout << below_threshold_count << "/" << delta_count_thresh_ << std::endl;
   std::cout << delta_free_points_ratio << std::endl;
   std::cout << free_points_ratio << std::endl;
   std::cout << ref_state.vel.norm() << std::endl;
   std::cout << dist_from_obstacle << std::endl;
-  std::cout << offset_angle << std::endl;
+  std::cout << offset_angle << std::endl;*/
   
-  /*if (dist_from_obstacle < stopping_radius_ || 
-  below_threshold_count > delta_count_thresh_ || 
-  free_points_ratio < free_ratio_thresh_ || stop_cost < 0)*/
   if (stop_cost < 0) {
     std::cout << "GENERATE STOP" << std::endl;
     generateCollisionFreeWaypoints(ref_state, ref_time);
