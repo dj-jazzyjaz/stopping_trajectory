@@ -9,10 +9,7 @@ namespace gr = gu::ros;
 
 
 StoppingTrajectory::StoppingTrajectory() {}
-StoppingTrajectory::~StoppingTrajectory() 
-{
-    writeToLog();
-}
+StoppingTrajectory::~StoppingTrajectory() {}
 
 bool StoppingTrajectory::getNextReference(state_t &state, ros::Time &reference_time, float lookahead)
 {
@@ -26,30 +23,6 @@ bool StoppingTrajectory::getNextReference(state_t &state, ros::Time &reference_t
 
     state.fromROS(service_call.response.state);
     return true;
-}
-
-// TODO: Don't think I'm using this, delete
-void StoppingTrajectory::joystickCallback(const sensor_msgs::Joy::ConstPtr &msg)
-{
-    //std::cout << msg->buttons[8] << std::endl;
-    ros::Time ref_time;
-    state_t ref_state;
-    float lookahead = 0;
-
-    // if (!flagEnabledQ("teleop")) {
-    //    return;
-    //}
-
-    if (msg->buttons[8])
-    {
-        if (!getNextReference(ref_state, ref_time, lookahead))
-        {
-            ROS_ERROR("reference not found; trajectory not generated");
-            return;
-        }
-        std::cout << "Generate waypoints" << std::endl;
-        generateCollisionFreeWaypoints(ref_state, ref_time);
-    }
 }
 
 /** @brief Generates a stopping trajectory that is collision free. Publishes the trajectory.
@@ -73,7 +46,7 @@ void StoppingTrajectory::generateCollisionFreeWaypoints(state_t state, const ros
     getEscapePoints(state.pos, state.vel, state.yaw(), escapePoints);
     // No escape points, generate stopping trajectory without goal point
     if (escapePoints.size() == 0) {
-        std::cout << "No escape points, generate stopping trajectory without goal point" << std::endl;
+        ROS_WARN("[Stopping Trajectory] No escape points, generate stopping trajectory without goal point");
         generateWaypoints(state, reference_time);
         return;
     }
@@ -115,17 +88,13 @@ void StoppingTrajectory::generateCollisionFreeWaypoints(state_t state, const ros
         traj_.markers.push_back(getTrajectoryVis(traj_wpts));
 
         if (isCollisionFree) {
-            // Visualize the bad escape points
-            //visualizeEscapePoints(invalidHODEscapePoints, 1); //yellow
-            //visualizeEscapePoints(invalidCollisionEscapePoints, 2); //red
-
             // Publish the collision free trajectory
             compute_duration = (std::clock() - start ) / (double) CLOCKS_PER_SEC;
             std::cout << "======== Found escape point. Total duration: " << compute_duration << "=================" << std::endl;
 
             double stddev_query_time;
             double avg_query = stats_utils::Average(queryDurations, &stddev_query_time);
-            std::cout << "Average Query time: " << avg_query << ", std: " << stddev_query_time << std::endl;
+            // std::cout << "Average Query time: " << avg_query << ", std: " << stddev_query_time << std::endl;
             avg_query_time.push_back(avg_query);
             publishTrajectory(traj_wpts, interval_step, duration);
             publishTrajectoryVis();
@@ -137,10 +106,7 @@ void StoppingTrajectory::generateCollisionFreeWaypoints(state_t state, const ros
     }
     publishTrajectoryVis();
     std::cout << "=========== Unable to find valid escape point ===============" << std::endl;
-    // Visualize the bad escape points
-    //visualizeEscapePoints(invalidHODEscapePoints, 1); //yellow
-    //visualizeEscapePoints(invalidCollisionEscapePoints, 2); //red
-
+   
     // Generate stopping trajectory with no goal position
     generateWaypoints(state, reference_time);
     compute_duration = (std::clock() - start ) / (double) CLOCKS_PER_SEC;

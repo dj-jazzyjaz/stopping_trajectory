@@ -12,7 +12,6 @@ bool StoppingTrajectory::initialize(const ros::NodeHandle &n)
   flags_sub_ = nh.subscribe("flags", 0, &StoppingTrajectory::flagsCallback, this);
 
   std::string prefix = ros::this_node::getNamespace();
-  joy_sub_ = nh.subscribe(ros::names::append(prefix, "joy"), 1, &StoppingTrajectory::joystickCallback, this);
   wpts_pub = nh.advertise<control_arch::Waypoints>(ros::names::append(ros::names::append(prefix, "trajectory"), "waypoints"), 1);
   get_reference_state_ = nh.serviceClient<control_arch::GetReferenceState>("get_reference_state");
   ROS_INFO("[Stopping Trajectory] Waiting for Reference State service.");
@@ -23,7 +22,8 @@ bool StoppingTrajectory::initialize(const ros::NodeHandle &n)
   escape_points_vis_pub_ = nh.advertise<visualization_msgs::MarkerArray>("escape_points_vis", 1);
   stop_traj_vis_pub_ = nh.advertise<visualization_msgs::MarkerArray>("stop_traj_vis", 1);
   sample_space_vis_pub_ = nh.advertise<visualization_msgs::Marker>("sample_space_vis", 1);
-
+  event_pub_ = nh.advertise<std_msgs::String>("event", 0, true);
+  
   getParams();
 
   if (!initMap())
@@ -35,28 +35,9 @@ bool StoppingTrajectory::initialize(const ros::NodeHandle &n)
     return false;
   }
 
-  bool obstacle_avoidance_on = false;
-  if (obstacle_avoidance_on)
-  {
-    // Am I even using this
-    ROS_INFO("[Stopping Trajectory] Collision avoidance start init");
-    collision_avoidance_ = std::make_unique<CollisionChecker>();
-    collision_avoidance_->initialize(n);
-    ROS_INFO("[Stopping Trajectory] Collision avoidance init");
-  }
 
-  // Run stopping condition checker in parallel if node is stopping_trajectory
-  std::string node_name = ros::this_node::getName().c_str();
-  if (node_name.compare("/acerodon00/stopping_trajectory") == 0)
-  {
-    free_points_ratio = 0;
-    below_threshold_count = 0;
-    event_pub_ = nh.advertise<std_msgs::String>("event", 0, true);
-    stop_timer_ = nh.createTimer(ros::Duration(0.05), &StoppingTrajectory::commandStop, this);
-  } 
-
-   ROS_INFO("[Stopping Trajectory] stopping_trajectory initialzed");
-   record_ = true;
+  ROS_INFO("[Stopping Trajectory] stopping_trajectory initialzed");
+  record_ = true;
   return true;
 }
 
@@ -110,8 +91,9 @@ void StoppingTrajectory::getParams()
   pu::get("command_stop/vel_weight", stop_vel_weight_);
   pu::get("command_stop/bias", stop_bias_);
   pu::get("compute_thresh", compute_thresh_);
-  pu::get("log", log_);
-
+  //pu::get("log", record_);
+  record_ = false;
+  
   red_.a = 1;
   red_.r = 1;
   red_.b = 0;

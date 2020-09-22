@@ -28,4 +28,4 @@ stratified_sample:
   sample_fraction: [0.01, 0.09, 0.4, 0.5] # percent of points for each strata, ordered highest to lowest strata. Should sum to 1.
   sample_num: [10, 40, 30, 20] # max number of points to sample from each strata
 compute_thresh: 0.01 # do not attempt computing escape points if vehicle velocity is below this threshold
-record: 0 # 0 for should not log, 1 otherwise
+log: 0 # 0 for should not log, 1 otherwise

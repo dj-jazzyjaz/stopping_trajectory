@@ -15,7 +15,7 @@ namespace stu = stats_utils;
  */
 double StoppingTrajectory::sortByCost(std::vector<float>& costs, 
                           std::vector<gu::Vec3>& escape_points) {  
-  std::clock_t clock_start = std::clock()
+  std::clock_t clock_start = std::clock();
   // Sort costs
   std::vector<size_t> costs_dist_sorted_idx;
   vu::Sort<float>(costs, &costs, &costs_dist_sorted_idx);
@@ -65,7 +65,7 @@ std::vector<gu::Vec3> StoppingTrajectory::sampleEscapePoints(gu::Vec3& pos, gu::
     return escape_points;
   }
 
-  if(log_) {
+  if(record_) {
     log_entry.t_cost = cost_duration;
     log_entry.t_cost_per_point = cost_duration/num_escape_points_init;
     log_entry.num_free_points = escape_points.size();
@@ -94,7 +94,7 @@ std::vector<gu::Vec3> StoppingTrajectory::sampleEscapePoints(gu::Vec3& pos, gu::
   }
   
   // Log timing info
-  if (log_) {
+  if (record_) {
     log_entry.t_sample = (std::clock() - sample_clock_start) / (double) CLOCKS_PER_SEC;
     log_entry = logSampleStatistics(escape_points, log_entry);
     log_entry.t_sort = sort_duration;

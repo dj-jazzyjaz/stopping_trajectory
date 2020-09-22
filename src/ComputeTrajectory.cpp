@@ -189,17 +189,6 @@ void StoppingTrajectory::populateTrajectory(const ros::Time &reference_time,
 }
 
 /**
- * @brief Checks each point along a trajectory for collisions, using KDtree.
- * Returns true if no collisions, false if collision detected.
- * */
-bool StoppingTrajectory::checkTrajectoryCollision(const std::vector<state_t> &traj)
-{
-  float &r = collision_radius_;
-  bool isSafe = collision_avoidance_->checkWaypointsSafeKDTree(traj, r);
-  return isSafe;
-}
-
-/**
  * @brief Checks each point along a trajectory for collisions, using the global map.
  * Returns true if no collisions, false if collision detected.
  * */

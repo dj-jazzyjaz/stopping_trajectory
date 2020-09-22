@@ -8,7 +8,6 @@ find_package(catkin REQUIRED COMPONENTS
       std_msgs
       control_arch
       geometry_utils
-      planning_arch
       local_map_generator
       parameter_utils
 )
@@ -21,7 +20,6 @@ catkin_package(
             std_msgs
             control_arch
             geometry_utils
-            planning_arch
             local_map_generator
             parameter_utils
 )

@@ -12,7 +12,6 @@
 #include <geometry_utils/GeometryUtils.h>
 #include <geometry_utils/GeometryUtilsROS.h>
 #include <parameter_utils/ParameterUtils.h>
-#include <planning_arch/collision_checker/CollisionChecker.h>
 #include <cpp_utils/vector_utils.h>
 #include <cpp_utils/linalg_utils.h>
 #include <visualization_msgs/MarkerArray.h>
@@ -49,8 +48,8 @@ public:
     bool initialize(const ros::NodeHandle &n);
     void generateWaypoints(state_t state, const ros::Time& reference_time);
     void generateCollisionFreeWaypoints(state_t state, const ros::Time& reference_time);
-    std::unique_ptr<CollisionChecker> collision_avoidance_;
-
+    void commandStop(const ros::TimerEvent &);
+    
 private:
     enum SamplingMethod {none, weighted_random, stratified, best_n};
     // Init
@@ -60,7 +59,6 @@ private:
     bool flagEnabledQ(const std::string& flag);
     
     //Stopping Trajectory
-    void joystickCallback(const sensor_msgs::Joy::ConstPtr& msg);
     bool getNextReference(state_t& state, ros::Time& reference_time, float lookahead);
     void publishTrajectory(std::vector<state_t> traj_wpts, float interval, ros::Duration duration);
     void displayEscapePoints();
@@ -74,7 +72,6 @@ private:
     void getPolynomials(const state_t& state, ros::Duration duration, std::vector<std::vector<double>>& coefficients); 
     void getPolynomialsWithPos(const state_t& state, gu::Vec3 goal_pos, double t_stop, std::vector<std::vector<double>>& coefficients);
     void populateTrajectory(const ros::Time &reference_time, int traj_length, const std::vector<std::vector<double>>& coefficients, ros::Duration duration, double step, std::vector<state_t> &traj);
-    bool checkTrajectoryCollision(const std::vector<state_t>& traj);
     bool checkTrajectoryCollisionGlobal(const std::vector<state_t>& traj);
     bool checkTrajectoryHOD(const std::vector<std::vector<double>>& coefficients, ros::Duration& duration, std::vector<double> thresholds);
     bool checkAccelThreshold(const std::vector<std::vector<double>>& coefficients, ros::Duration &duration, double acc_threshold);
@@ -104,7 +101,6 @@ private:
     // Command Stop
     void stopWithinDistance(const ros::TimerEvent &);
     float freePointsRatio(state_t ref_state);
-    void commandStop(const ros::TimerEvent &);
 
     // Parameters
     double vel_threshold_;

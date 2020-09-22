@@ -17,8 +17,9 @@ void StoppingTrajectory::stopWithinDistance(const ros::TimerEvent &)
   float lookahead = 0;
   if (!getNextReference(ref_state, ref_time, lookahead))
   {
-    ROS_ERROR("reference not found; escape points not generated");
+    ROS_ERROR("[Stop within distance] reference not found; escape points not generated");
   }
+
   if (ref_state.vel.norm() < compute_thresh_) return;
 
   traj_.markers.clear();
@@ -64,30 +65,18 @@ float StoppingTrajectory::freePointsRatio(state_t ref_state)
 void StoppingTrajectory::commandStop(const ros::TimerEvent &)
 {
   if (!flagEnabledQ("teleop")) return;
+  clock_t start = std::clock();
 
   ros::Time ref_time;
   state_t ref_state;
   float lookahead = 0;
   if (!getNextReference(ref_state, ref_time, lookahead))
   {
-    ROS_ERROR("reference not found; escape points not generated");
+    ROS_ERROR("[Command Stop] Reference not found; escape points not generated");
   }
+
   if (ref_state.vel.norm() < compute_thresh_) return;
   traj_.markers.clear();
-
-  // Get the ratio of free points and update derivative of free points ratio
-  // TODO: take this out because it's not useful?
-  float ratio_new = freePointsRatio(ref_state);
-  float delta_free_points_ratio = free_points_ratio - ratio_new;
-  if (delta_free_points_ratio > delta_free_thresh_)
-  {
-    below_threshold_count++;
-  }
-  else
-  {
-    below_threshold_count = 0;
-  }
-  free_points_ratio = ratio_new;
 
   // Get distance and location of nearest obstacle
   float *neigh_point = new float[3];
@@ -96,6 +85,7 @@ void StoppingTrajectory::commandStop(const ros::TimerEvent &)
   // get the angle between vector from position->obstacle relative to current yaw
   float offset_x = neigh_point[0] - ref_state.pos.x();
   float offset_y = neigh_point[1] - ref_state.pos.y();
+  
   // Since x is the direction of vehicle heading when yaw is 0, take atan(y, x)
   // Take absolute value and min between 2*pi-angle and angle to get true offset
   float offset_angle = gu::math::atan2(offset_y, offset_x) - (float)ref_state.yaw();
@@ -104,18 +94,20 @@ void StoppingTrajectory::commandStop(const ros::TimerEvent &)
   // Calcuate stop cost as a weighted sum of distance, angle and velocity
   float stop_cost = offset_angle + stop_dist_weight_ * dist_from_obstacle 
     - stop_vel_weight_ * ref_state.vel.norm() - stop_bias_; 
+  
+  double compute_duration = (std::clock() - start ) / (double) CLOCKS_PER_SEC;
 
-  /*std::cout << "Stop conditions" << std::endl;
-  std::cout << stop_cost << std::endl;
-  std::cout << below_threshold_count << "/" << delta_count_thresh_ << std::endl;
-  std::cout << delta_free_points_ratio << std::endl;
-  std::cout << free_points_ratio << std::endl;
-  std::cout << ref_state.vel.norm() << std::endl;
-  std::cout << dist_from_obstacle << std::endl;
-  std::cout << offset_angle << std::endl;*/
+  ROS_INFO("[Command Stop] Cost: %f. Angle: %f. Dist: %f; %f. Vel: %f; %f. Time: %f sec \n", 
+    stop_cost, 
+    offset_angle, 
+    dist_from_obstacle, 
+    stop_dist_weight_ * dist_from_obstacle,
+    ref_state.vel.norm(),
+    stop_vel_weight_ * ref_state.vel.norm(),
+    compute_duration);
   
   if (stop_cost < 0) {
-    std::cout << "GENERATE STOP" << std::endl;
+    std::cout << "======== Generate stopping command ========" << std::endl;
     generateCollisionFreeWaypoints(ref_state, ref_time);
     std_msgs::String event_msg;
     event_msg.data = "HoverEvent";
