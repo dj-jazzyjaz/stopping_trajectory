@@ -67,16 +67,15 @@ void StoppingTrajectory::getParams()
   pu::get("hod_threshold/jerk", jerk_threshold_, double(100.0));
   pu::get("hod_threshold/snap", snap_threshold_, double(500.0));
   thresholds_.assign({vel_threshold_, acc_threshold_, jerk_threshold_, snap_threshold_});
-  pu::get("cost_function/vel_deviation_weight", vel_deviation_weight_, double(0.5));
-  pu::get("cost_function/obstacle_dist_weight", obstacle_dist_weight_, double(0.5));
+  pu::get("cost_function/vel_deviation_weight", vel_deviation_weight_, float(0.5));
+  pu::get("cost_function/obstacle_dist_weight", obstacle_dist_weight_, float(0.5));
   pu::get("escape_point_generation/grid_length", grid_length_);
   pu::get("escape_point_generation/grid_width", grid_width_);
   pu::get("escape_point_generation/sample_length", sample_length_);
   pu::get("escape_point_generation/sample_width", sample_width_);
   pu::get("escape_point_generation/sample_height", sample_height_);
-  pu::get("command_stop/collision_radius", collision_radius_, float(0.05));
+  pu::get("collision_radius", collision_radius_);
   pu::get("command_stop/stopping_radius", stopping_radius_, float(1.0));
-  pu::get("command_stop/stopping_angle", stopping_angle_, float(1.0));
   pu::get("sample_method", sample_method_);
   pu::get("sample_num", sample_num_);
   if (sample_method_ == stratified)
@@ -84,11 +83,9 @@ void StoppingTrajectory::getParams()
     pu::get("stratified_sample/sample_fraction", strat_sample_fraction_);
     pu::get("stratified_sample/sample_num", strat_sample_num_);
   }
-  pu::get("command_stop/free_ratio_thresh", free_ratio_thresh_);
-  pu::get("command_stop/delta_free_thresh", delta_free_thresh_);
-  pu::get("command_stop/delta_count_thresh", delta_count_thresh_);
   pu::get("command_stop/dist_weight", stop_dist_weight_);
   pu::get("command_stop/vel_weight", stop_vel_weight_);
+  pu::get("command_stop/angle_weight", stop_angle_weight_);
   pu::get("command_stop/bias", stop_bias_);
   pu::get("compute_thresh", compute_thresh_);
   //pu::get("log", record_);
@@ -103,6 +100,11 @@ void StoppingTrajectory::getParams()
   green_.r = 0.0;
   green_.b = 0.0;
   green_.g = 1.0;
+
+  pink_.a = 0.8;
+  pink_.r = 1;
+  pink_.g = 0;
+  pink_.b = 0.5;
 }
 
 void StoppingTrajectory::flagsCallback(const control_arch::FsmFlags::ConstPtr &msg)

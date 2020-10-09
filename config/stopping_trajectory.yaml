@@ -1,21 +1,19 @@
 hod_threshold:
+
   vel: 50
   acc: 10
   jerk: 200
   snap: 500
-cost_function:
-  vel_deviation_weight: 0.7
-  obstacle_dist_weight: 0.3
+cost_function:  # Weights for computing cost of escape points
+  vel_deviation_weight: 0.7  # Make larger to penalize deviation from current velocity vector
+  obstacle_dist_weight: 0.3  # Make larger to reward distance from obstacle
+collision_radius: 0.2 # Used for checking collision of points on trajectories
 command_stop:
-  collision_radius: 0.4
-  stopping_radius: 1
-  stopping_angle: 0.6 # threshold for angle offset of nearest obstacle from current heading 
-  free_ratio_thresh: 0.3   # threshold for ratio of free points to sampled points
-  delta_free_thresh: 0.02 # threshold for delta free points ratio from previous sampling
-  delta_count_thresh: 4    # number of consecutive samples below delta_free_thresh until stop commanded
-  dist_weight: 0.9 # Scale the angle cost when calculating stop cost
-  bias: 1.2 # Bias when calculating stop cost
-  vel_weight: 0.2 # Scale velocity cost when calculating stop cost
+  stopping_radius: 0.5 # Minimum stopping radius
+  bias: 0.9 # Make larger to stop earlier (i.e., more likely to stop given current conditions). 
+  dist_weight: 0.8 # Make larger to reward high distance from obstacle.
+  angle_weight: 1.2 # Make larger to reward a large angle seperate between vehicle's current heading and direction of nearest obstacle
+  vel_weight: 0.6 # Make larger to penalize high velocities.
 escape_point_generation:
   grid_length: 1 # Scale of sample space length, which is based on velocity norm
   grid_width: 1 # Scale sample space width, TODO IMPROVE THIS COMMENT

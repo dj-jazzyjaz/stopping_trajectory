@@ -108,7 +108,7 @@ void StoppingTrajectory::visualizeSampleSpace(std::vector<gu::Vec3> rect_pts) {
     marker.points.push_back(gr::toPoint(corner6));
     marker.points.push_back(gr::toPoint(corner2));
     
-    sample_space_vis_pub_.publish(marker);
+    // sample_space_vis_pub_.publish(marker);
 }
 
 void StoppingTrajectory::visualizeEscapePoints(std::vector<gu::Vec3> escape_points, std::vector<float> costs) {
@@ -156,6 +156,44 @@ void StoppingTrajectory::visualizeEscapePoints(std::vector<gu::Vec3> escape_poin
     marker_array_.markers.push_back(marker);
   }
   escape_points_vis_pub_.publish(marker_array_);
+}
+
+void StoppingTrajectory::visualizeNearestObstacle(gu::Vec3 vehicle_pos, gu::Vec3 obstacle_pos, double vehicle_yaw, gu::Vec3 vehicle_vel,
+  gu::Vec3 b2, gu::Vec3 b3) {
+    visualization_msgs::Marker marker;
+    marker.header.stamp = ros::Time::now();
+    marker.header.frame_id = fixed_frame_id_;
+    marker.id = 0;
+    marker.type = visualization_msgs::Marker::LINE_STRIP;
+    marker.action = visualization_msgs::Marker::ADD;
+    marker.scale.x = 0.05;
+    marker.scale.y = 0.05;
+    marker.scale.z = 0.05;
+    marker.pose.position = gr::toPoint(gu::Vec3(0, 0, 0));
+
+    std_msgs::ColorRGBA blue_;
+    blue_.a = 0.8;
+    blue_.r = 0.0;
+    blue_.g = 0.0;
+    blue_.b = 1.0;
+    marker.colors = {red_, red_, green_, green_, pink_, pink_, pink_, pink_, pink_};
+    /* gu::Vec3 yaw_vector(
+      vehicle_pos.x() + vehicle_vel * gu::math::cos(vehicle_yaw),
+      vehicle_pos.y() + vehicle_vel * gu::math::sin(vehicle_yaw),
+      vehicle_pos.z()
+    ); */
+       
+    marker.points.push_back(gr::toPoint(obstacle_pos));
+    marker.points.push_back(gr::toPoint(vehicle_pos));
+    marker.points.push_back(gr::toPoint(vehicle_pos));
+    marker.points.push_back(gr::toPoint(vehicle_pos + vehicle_vel));
+    marker.points.push_back(gr::toPoint(vehicle_pos + vehicle_vel));
+    marker.points.push_back(gr::toPoint(vehicle_pos));
+    marker.points.push_back(gr::toPoint(vehicle_pos + b2));
+    marker.points.push_back(gr::toPoint(vehicle_pos));
+    marker.points.push_back(gr::toPoint(vehicle_pos + b3));
+    
+    sample_space_vis_pub_.publish(marker);
 }
 
 void StoppingTrajectory::writeLog(){

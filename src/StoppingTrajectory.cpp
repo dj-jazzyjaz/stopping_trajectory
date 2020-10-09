@@ -27,7 +27,7 @@ bool StoppingTrajectory::getNextReference(state_t &state, ros::Time &reference_t
 
 /** @brief Generates a stopping trajectory that is collision free. Publishes the trajectory.
  * */
-void StoppingTrajectory::generateCollisionFreeWaypoints(state_t state, const ros::Time &reference_time)
+void StoppingTrajectory::generateCollisionFreeWaypoints(state_t state, const ros::Time &reference_time, float stopping_trajectory_duration)
 {
     // Return if current velocity is very small
     if(state.vel.norm() < compute_thresh_) return;
@@ -44,7 +44,6 @@ void StoppingTrajectory::generateCollisionFreeWaypoints(state_t state, const ros
     // Get potential escape points
     std::vector<gu::Vec3> escapePoints;
     getEscapePoints(state.pos, state.vel, state.yaw(), escapePoints);
-    // No escape points, generate stopping trajectory without goal point
     if (escapePoints.size() == 0) {
         ROS_WARN("[Stopping Trajectory] No escape points, generate stopping trajectory without goal point");
         generateWaypoints(state, reference_time);
@@ -62,14 +61,13 @@ void StoppingTrajectory::generateCollisionFreeWaypoints(state_t state, const ros
         std::clock_t query_start = std::clock();
 
         // Determine trajectory duration and time step interval
-        double t_stop = 2.0; //getTrajectoryDuration(state, escapePoints[i]);
-        ros::Duration duration(t_stop);
+        ros::Duration duration(stopping_trajectory_duration);
         num_intervals = 200;
-        interval_step = t_stop/(num_intervals-1);
+        interval_step = stopping_trajectory_duration/(num_intervals-1);
 
         // Get the polynomial coefficients of the trajectory. Check if within accel thresholds.
         std::vector<std::vector<double>> polyCoeffs;
-        getPolynomialsWithPos(state, escapePoints[i], t_stop, polyCoeffs);
+        getPolynomialsWithPos(state, escapePoints[i], stopping_trajectory_duration, polyCoeffs);
         //if (!checkTrajectoryHOD(polyCoeffs, duration, thresholds_)) {
         if (!checkAccelThreshold(polyCoeffs, duration, acc_threshold_)) { 
             // Trajectory not within the higher order derivative bounds
@@ -118,16 +116,16 @@ void StoppingTrajectory::generateCollisionFreeWaypoints(state_t state, const ros
 
 /** @brief Generate and publishes a stopping trajectory. Doesn't check for collision.
 */
-void StoppingTrajectory::generateWaypoints(state_t state, const ros::Time &reference_time)
+void StoppingTrajectory::generateWaypoints(state_t state, const ros::Time &reference_time, float stopping_trajectory_duration)
 {
-    float interval = 0.01;
-    int num_intervals = 101; //((float)duration.nsec)/interval + 1;
-    ros::Duration duration(1);
+    ros::Duration duration(stopping_trajectory_duration);
+    int num_intervals = 200;
+    float interval_step = stopping_trajectory_duration/(num_intervals-1);
     std::vector<std::vector<double>> polyCoeffs;
     getPolynomials(state, duration, polyCoeffs);
     std::vector<state_t> traj_wpts;
-    populateTrajectory(reference_time, num_intervals, polyCoeffs, duration, interval, traj_wpts);
-    publishTrajectory(traj_wpts, interval, duration);
+    populateTrajectory(reference_time, num_intervals, polyCoeffs, duration, interval_step, traj_wpts);
+    publishTrajectory(traj_wpts, interval_step, duration);
 }
 
 void StoppingTrajectory::publishTrajectory(std::vector<state_t> traj_wpts, float interval, ros::Duration duration)

@@ -22,14 +22,17 @@ catkin_package(
             geometry_utils
             local_map_generator
             parameter_utils
+            PCL
 )
 
 include_directories(include
       ${catkin_INCLUDE_DIRS}
+      ${PCL_INCLUDE_DIRS}
 )
 
 link_directories(
       ${catkin_LIBRARY_DIRS}
+      ${PCL_INCLUDE_DIRS}
 )
 
 add_definitions(
@@ -48,6 +51,7 @@ add_library(${PROJECT_NAME}
 
 target_link_libraries(${PROJECT_NAME}
       ${catkin_LIBRARIES}
+      ${PCL_LIBRARIES}
 )
 
 add_executable(${PROJECT_NAME}_node

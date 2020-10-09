@@ -12,6 +12,7 @@
 #include <geometry_utils/GeometryUtils.h>
 #include <geometry_utils/GeometryUtilsROS.h>
 #include <parameter_utils/ParameterUtils.h>
+#include <pcl/point_types.h>
 #include <cpp_utils/vector_utils.h>
 #include <cpp_utils/linalg_utils.h>
 #include <visualization_msgs/MarkerArray.h>
@@ -46,9 +47,9 @@ public:
     StoppingTrajectory();
     ~StoppingTrajectory();
     bool initialize(const ros::NodeHandle &n);
-    void generateWaypoints(state_t state, const ros::Time& reference_time);
-    void generateCollisionFreeWaypoints(state_t state, const ros::Time& reference_time);
-    void commandStop(const ros::TimerEvent &);
+    void generateWaypoints(state_t state, const ros::Time& reference_time, float stopping_trajectory_duration=1.0);
+    void generateCollisionFreeWaypoints(state_t state, const ros::Time& reference_time, float stopping_trajectory_duration=2.0);
+    void commandStop(const ros::TimerEvent &, float stopping_trajectory_duration=2.0);
     
 private:
     enum SamplingMethod {none, weighted_random, stratified, best_n};
@@ -97,6 +98,7 @@ private:
     void publishTrajectoryVis();
     void visualizeEscapePoints(std::vector<gu::Vec3> escape_points, std::vector<float> costs);
     void visualizeSampleSpace(std::vector<gu::Vec3> rect_pts);
+    void visualizeNearestObstacle(gu::Vec3 vehicle_pos, gu::Vec3 obstacle_pos, double vehicle_yaw, gu::Vec3 vehicle_vel, gu::Vec3 b2, gu::Vec3 b3);
 
     // Command Stop
     void stopWithinDistance(const ros::TimerEvent &);
@@ -110,17 +112,14 @@ private:
     std::vector<double> thresholds_;
     float collision_radius_;
     float stopping_radius_;
-    float stopping_angle_;
-    double vel_deviation_weight_;
-    double obstacle_dist_weight_;
     double grid_length_;
     double grid_width_;
-    float free_ratio_thresh_;
-    float delta_free_thresh_;
-    int delta_count_thresh_; 
+    float vel_deviation_weight_;
+    float obstacle_dist_weight_;
     float compute_thresh_;
     float stop_dist_weight_;
     float stop_vel_weight_;
+    float stop_angle_weight_;
     float stop_bias_;
    
     // Sample variables
@@ -146,15 +145,10 @@ private:
 
     std::set<std::string> flags_; 
     GlobalMapGenerator global_map_;
-    std_msgs::ColorRGBA red_, green_;
+    std_msgs::ColorRGBA red_, green_, pink_;
     std::string fixed_frame_id_;                // Vehicle base frame ID
     visualization_msgs::MarkerArray marker_array_;
     visualization_msgs::MarkerArray traj_;
-
-    // Command Stop variables
-    ros::Timer stop_timer_;
-    float free_points_ratio;
-    int below_threshold_count;
 
     // Logging
     void writeLog();
