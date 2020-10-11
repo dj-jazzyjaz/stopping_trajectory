@@ -56,7 +56,7 @@ visualization_msgs::Marker StoppingTrajectory::getTrajectoryVis(std::vector<stat
 
 void StoppingTrajectory::publishTrajectoryVis()
 {
-  stop_traj_vis_pub_.publish(traj_);
+  //stop_traj_vis_pub_.publish(traj_);
   std::cout << "Visualize sampled stopping trajectories, # traj = " << traj_.markers.size() << std::endl;
 }
 
@@ -194,6 +194,62 @@ void StoppingTrajectory::visualizeNearestObstacle(gu::Vec3 vehicle_pos, gu::Vec3
     marker.points.push_back(gr::toPoint(vehicle_pos + b3));
     
     sample_space_vis_pub_.publish(marker);
+}
+
+void StoppingTrajectory::visualizeNeighborhood(std::vector<gu::Vec3> neighbor_points, std::vector<float> neighbor_costs, gu::Vec3 vehicle_pos, gu::Vec3 vehicle_vel) {
+  visualization_msgs::MarkerArray marker_array;
+  int id = 0;
+  for(int i = 0; i < neighbor_points.size(); i++) {
+    gu::Vec3 neighbor = neighbor_points[i];
+    auto cost = neighbor_costs[i];
+
+    visualization_msgs::Marker marker;
+    marker.header.stamp = ros::Time::now();
+    marker.header.frame_id = fixed_frame_id_;
+    marker.id = id;
+    id++;
+    marker.type = visualization_msgs::Marker::LINE_STRIP;
+    marker.action = visualization_msgs::Marker::ADD;
+    marker.scale.x = 0.05;
+    marker.scale.y = 0.05;
+    marker.scale.z = 0.05;
+    marker.pose.position = gr::toPoint(gu::Vec3(0, 0, 0));
+
+    // Give trajectory color ranging between blue and red based off index
+    std_msgs::ColorRGBA color;
+    if(cost > 0) {
+      printf("green\n");
+      color = green_;
+    } else {
+      printf("red\n");
+      color = red_;
+    }
+    marker.color = color;
+    
+    marker.points.push_back(gr::toPoint(neighbor));
+    marker.points.push_back(gr::toPoint(vehicle_pos));
+
+    marker_array.markers.push_back(marker);
+  }
+
+  // Make marker for velocity vector
+  visualization_msgs::Marker marker;
+  marker.header.stamp = ros::Time::now();
+  marker.header.frame_id = fixed_frame_id_;
+  marker.id = id;
+  marker.type = visualization_msgs::Marker::LINE_STRIP;
+  marker.action = visualization_msgs::Marker::ADD;
+  marker.scale.x = 0.05;
+  marker.scale.y = 0.05;
+  marker.scale.z = 0.05;
+  marker.pose.position = gr::toPoint(gu::Vec3(0, 0, 0));
+  marker.color = pink_;
+  
+  marker.points.push_back(gr::toPoint(vehicle_pos + vehicle_vel));
+  marker.points.push_back(gr::toPoint(vehicle_pos));
+
+  marker_array.markers.push_back(marker);
+  stop_traj_vis_pub_.publish(marker_array);
 }
 
 void StoppingTrajectory::writeLog(){

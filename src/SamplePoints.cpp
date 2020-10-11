@@ -16,16 +16,9 @@ namespace stu = stats_utils;
 double StoppingTrajectory::sortByCost(std::vector<float>& costs, 
                           std::vector<gu::Vec3>& escape_points) {  
   std::clock_t clock_start = std::clock();
-  // Sort costs
-  std::vector<size_t> costs_dist_sorted_idx;
-  vu::Sort<float>(costs, &costs, &costs_dist_sorted_idx);
 
-  // Push escape points by sorted cost
   std::vector<gu::Vec3> escape_points_sorted;
-  for(uint i = 0; i < escape_points.size(); i++) {
-    escape_points_sorted.push_back(escape_points[costs_dist_sorted_idx[i]]);
-  }
-  escape_points = escape_points_sorted;
+  vu::ArgSort(escape_points, &escape_points_sorted, costs, &costs);
 
   double sort_time = (std::clock() - clock_start) / (double) CLOCKS_PER_SEC;
   return sort_time;

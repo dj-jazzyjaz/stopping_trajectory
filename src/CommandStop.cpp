@@ -6,6 +6,7 @@ namespace planner
 namespace gu = geometry_utils;
 namespace pu = parameter_utils;
 namespace gr = gu::ros;
+namespace vu = vector_utils;
 
 /**
  * @brief Generates a stopping trajectory is vehicle is within stop distance
@@ -44,6 +45,10 @@ void StoppingTrajectory::commandStop(const ros::TimerEvent &, float stopping_tra
   if (!flagEnabledQ("teleop")) return;
   clock_t start = std::clock();
 
+  // Clear visualization
+  visualization_msgs::MarkerArray marker_array;
+  stop_traj_vis_pub_.publish(marker_array);
+
   ros::Time ref_time;
   state_t ref_state;
   float lookahead = 0;
@@ -58,9 +63,6 @@ void StoppingTrajectory::commandStop(const ros::TimerEvent &, float stopping_tra
   // Get distance and location of nearest obstacle
   float *neigh_point = new float[3];
   float dist_from_obstacle = global_map_.find_nearest_neighbor(ref_state.pos.x(), ref_state.pos.y(), ref_state.pos.z(), neigh_point);
-
-  
-   
   
   // Stop is distance is too small
   if (dist_from_obstacle < stopping_radius_)
@@ -73,68 +75,70 @@ void StoppingTrajectory::commandStop(const ros::TimerEvent &, float stopping_tra
     event_pub_.publish(event_msg);
   }
 
-  /* Get points in neighbors */
+  // Get points in neighbors
   float neighbor_radius = 3.0f;
   std::vector<pcl::PointXYZ> neighbors; 
   global_map_.check_neighbor_in_radius(ref_state.pos.x(), ref_state.pos.y(), ref_state.pos.z(), neighbor_radius, &neighbors);
   std::cout << "Num neighbors" << neighbors.size() << std::endl;
 
-  // Get orthonormal basis wrt vehicle velocity vector
-  gu::Vec3 b1 = ref_state.vel.normalize();
-  gu::Vec3 b2(-b1.y(), b1.x(), 0);
-  b2 = b2.normalize();
-  gu::Vec3 b3 = b1.cross(b2).normalize();
-  gu::Mat33 R(b1.x(), b2.x(), b3.x(),
-    b1.y(), b2.y(), b3.y(),
-    b1.z(), b2.z(), b3.z()  
-  );
-  gu::Mat33 Rinv = R.inv();
+  
+  if (neighbors.size() == 0) return;
 
-  // std::cout << 'Rotation matrix' << R << std::endl;
-  // std::cout << 'Rotation matrix inv' << Rinv << std::endl;
-  gu::Vec3 nearest_neighbor; 
-  float nearest_dist = MAXFLOAT;
+  std::vector<gu::Vec3> relevant_neighbors;
+  std::vector<float> neighbor_costs;
+  double offset_angle;
+  double vel_norm = ref_state.vel.norm();
+  double stop_cost;
+
+  // Project points vector onto velocity vector. Throw away those with a negative dot product
   for(auto neighbor : neighbors) {
     gu::Vec3 curr_neighbor(neighbor.x, neighbor.y, neighbor.z);
     // Put the neighbor point in the robot velocity frame
-    gu::Vec3 neighbor_wrt_body = Rinv * (curr_neighbor - ref_state.pos);
-    // Scale the axes. TODO: scale with velocity 
-    gu::Vec3 scaled_neighbor = neighbor_wrt_body/gu::Vec3(1, 2, 2);
-    // Get the new 'distance'
-    float scaled_dist = scaled_neighbor.norm();
-    if(scaled_dist < nearest_dist && scaled_neighbor.x() > 0) {
-      nearest_dist = scaled_dist;
-      nearest_neighbor = curr_neighbor;
+    gu::Vec3 neighbor_offset = curr_neighbor - ref_state.pos;
+    if(neighbor_offset.normalize().dot(ref_state.vel.normalize()) > 0) {
+      relevant_neighbors.push_back(curr_neighbor);
+      
+      offset_angle = gu::math::acos(
+        neighbor_offset.dot(ref_state.vel)/(neighbor_offset.norm() * ref_state.vel.norm())
+      ); // Use the dot product cosine rule
+      
+      // Calculate the stop cost
+      stop_cost = stop_angle_weight_ * offset_angle + stop_dist_weight_ * neighbor_offset.norm() 
+        - stop_vel_weight_ * vel_norm - stop_bias_; 
+      neighbor_costs.push_back((float)stop_cost);
     }
   }
 
-  // DEBUGGNG
-  if(nearest_dist != MAXFLOAT) {
-    gu::Vec3 curr_neighbor = nearest_neighbor;
-    // Put the neighbor point in the robot velocity frame
-    gu::Vec3 neighbor_wrt_body = Rinv * (curr_neighbor - ref_state.pos);
-    // Scale the axes. TODO: scale with velocity 
-    gu::Vec3 scaled_neighbor = neighbor_wrt_body/gu::Vec3(1, 2, 2);
-    // Get the new 'distance'
-    float scaled_dist = scaled_neighbor.norm();
-    if(scaled_dist < nearest_dist) {
-      nearest_dist = scaled_dist;
-      nearest_neighbor = curr_neighbor;
-    }
-    /*std::cout << "Curr neighbor" << std::endl;
-    curr_neighbor.print();*/
-    std::cout << "Neighbor wrt body" << std::endl;
-    neighbor_wrt_body.print();
-    std::cout << "Scaled neighbor" << std::endl;
-    scaled_neighbor.print();
-    std::cout << "Scaled: " << scaled_dist << " Actual dist: " << (curr_neighbor - ref_state.pos).norm() << std::endl;
-    ROS_INFO("[Command Stop] %f, %fm/s", nearest_dist - ref_state.vel.norm(), ref_state.vel.norm());
-    visualizeNearestObstacle(ref_state.pos, curr_neighbor, ref_state.yaw(), b1, b2, b3);
+  // Visualize the results
+  std::vector<gu::Vec3> neighbors_sorted;
+  std::vector<float> neighbor_costs_sorted;
+  vu::ArgSort(relevant_neighbors, &neighbors_sorted, neighbor_costs, &neighbor_costs_sorted);
+  if(relevant_neighbors.size() > 10) {
+    relevant_neighbors = vu::Slice(neighbors_sorted, 0, 10);
+    neighbor_costs = vu::Slice(neighbor_costs_sorted, 0, 10);
+  } else {
+    relevant_neighbors = neighbors_sorted;
+    neighbor_costs = neighbor_costs_sorted;
+  }
+  
+  int i = 0;
+  for(auto n: relevant_neighbors) {
+    std::cout << "Neighbor " << i << std::endl;
+    n.print();
+    gu::Vec3 neighbor_offset = n - ref_state.pos;
+    neighbor_offset.print();
+    neighbor_offset.normalize().print();
+    std::cout << neighbor_offset.normalize().dot(ref_state.vel.normalize()) << ", " << neighbor_costs[i] << std::endl;
+    i++;
+
   }
 
+  std::cout << "Velocity" << std::endl;
+  ref_state.vel.normalize().print();
+ 
+  if(relevant_neighbors.size() > 0) visualizeNeighborhood(relevant_neighbors, neighbor_costs, ref_state.pos, ref_state.vel);
 
-  if(nearest_dist < ref_state.vel.norm()) {
-
+  if(relevant_neighbors.size() > 0 && *std::min_element(neighbor_costs.begin(), neighbor_costs.end()) < 0) {
     std::cout << "======== Generate stopping command ========" << std::endl;
     generateCollisionFreeWaypoints(ref_state, ref_time, stopping_trajectory_duration);
     std_msgs::String event_msg;
@@ -142,9 +146,8 @@ void StoppingTrajectory::commandStop(const ros::TimerEvent &, float stopping_tra
     event_pub_.publish(event_msg);
   }
 
-  
   return;
-
+  /*
   // get the angle between vector from position->obstacle relative to current yaw
   float offset_x = neigh_point[0] - ref_state.pos.x();
   float offset_y = neigh_point[1] - ref_state.pos.y();
@@ -209,7 +212,7 @@ void StoppingTrajectory::commandStop(const ros::TimerEvent &, float stopping_tra
     gu::math::atan2(offset_y, offset_x) * (180/3.14159), 
     offset_angle  * (180/3.14159)
   ); */
-
+/*
   gu::Vec3 neighbor_pos(neigh_point[0], neigh_point[1], neigh_point[2]);
   // visualizeNearestObstacle(ref_state.pos, neighbor_pos, ref_state.yaw(), 0.5 * ref_state.vel);
 
@@ -224,6 +227,7 @@ void StoppingTrajectory::commandStop(const ros::TimerEvent &, float stopping_tra
   
 
   delete[] neigh_point;
+  */
 }
 
 } // namespace planner

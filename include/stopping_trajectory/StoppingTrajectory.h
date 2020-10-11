@@ -99,7 +99,8 @@ private:
     void visualizeEscapePoints(std::vector<gu::Vec3> escape_points, std::vector<float> costs);
     void visualizeSampleSpace(std::vector<gu::Vec3> rect_pts);
     void visualizeNearestObstacle(gu::Vec3 vehicle_pos, gu::Vec3 obstacle_pos, double vehicle_yaw, gu::Vec3 vehicle_vel, gu::Vec3 b2, gu::Vec3 b3);
-
+    void visualizeNeighborhood(std::vector<gu::Vec3> neighbor_points, std::vector<float> neighbor_costs, gu::Vec3 vehicle_pos, gu::Vec3 vehicle_vel);
+    
     // Command Stop
     void stopWithinDistance(const ros::TimerEvent &);
     float freePointsRatio(state_t ref_state);
