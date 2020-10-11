@@ -56,7 +56,7 @@ visualization_msgs::Marker StoppingTrajectory::getTrajectoryVis(std::vector<stat
 
 void StoppingTrajectory::publishTrajectoryVis()
 {
-  //stop_traj_vis_pub_.publish(traj_);
+  stop_traj_vis_pub_.publish(traj_);
   std::cout << "Visualize sampled stopping trajectories, # traj = " << traj_.markers.size() << std::endl;
 }
 
@@ -108,7 +108,7 @@ void StoppingTrajectory::visualizeSampleSpace(std::vector<gu::Vec3> rect_pts) {
     marker.points.push_back(gr::toPoint(corner6));
     marker.points.push_back(gr::toPoint(corner2));
     
-    // sample_space_vis_pub_.publish(marker);
+    sample_space_vis_pub_.publish(marker);
 }
 
 void StoppingTrajectory::visualizeEscapePoints(std::vector<gu::Vec3> escape_points, std::vector<float> costs) {
@@ -156,44 +156,6 @@ void StoppingTrajectory::visualizeEscapePoints(std::vector<gu::Vec3> escape_poin
     marker_array_.markers.push_back(marker);
   }
   escape_points_vis_pub_.publish(marker_array_);
-}
-
-void StoppingTrajectory::visualizeNearestObstacle(gu::Vec3 vehicle_pos, gu::Vec3 obstacle_pos, double vehicle_yaw, gu::Vec3 vehicle_vel,
-  gu::Vec3 b2, gu::Vec3 b3) {
-    visualization_msgs::Marker marker;
-    marker.header.stamp = ros::Time::now();
-    marker.header.frame_id = fixed_frame_id_;
-    marker.id = 0;
-    marker.type = visualization_msgs::Marker::LINE_STRIP;
-    marker.action = visualization_msgs::Marker::ADD;
-    marker.scale.x = 0.05;
-    marker.scale.y = 0.05;
-    marker.scale.z = 0.05;
-    marker.pose.position = gr::toPoint(gu::Vec3(0, 0, 0));
-
-    std_msgs::ColorRGBA blue_;
-    blue_.a = 0.8;
-    blue_.r = 0.0;
-    blue_.g = 0.0;
-    blue_.b = 1.0;
-    marker.colors = {red_, red_, green_, green_, pink_, pink_, pink_, pink_, pink_};
-    /* gu::Vec3 yaw_vector(
-      vehicle_pos.x() + vehicle_vel * gu::math::cos(vehicle_yaw),
-      vehicle_pos.y() + vehicle_vel * gu::math::sin(vehicle_yaw),
-      vehicle_pos.z()
-    ); */
-       
-    marker.points.push_back(gr::toPoint(obstacle_pos));
-    marker.points.push_back(gr::toPoint(vehicle_pos));
-    marker.points.push_back(gr::toPoint(vehicle_pos));
-    marker.points.push_back(gr::toPoint(vehicle_pos + vehicle_vel));
-    marker.points.push_back(gr::toPoint(vehicle_pos + vehicle_vel));
-    marker.points.push_back(gr::toPoint(vehicle_pos));
-    marker.points.push_back(gr::toPoint(vehicle_pos + b2));
-    marker.points.push_back(gr::toPoint(vehicle_pos));
-    marker.points.push_back(gr::toPoint(vehicle_pos + b3));
-    
-    sample_space_vis_pub_.publish(marker);
 }
 
 void StoppingTrajectory::visualizeNeighborhood(std::vector<gu::Vec3> neighbor_points, std::vector<float> neighbor_costs, gu::Vec3 vehicle_pos, gu::Vec3 vehicle_vel) {
@@ -258,12 +220,6 @@ void StoppingTrajectory::writeLog(){
     double query_time = stats_utils::Average(avg_query_time, &stddev);
     std::cout << "Average query time per escape point (ms)" << 1000*query_time << std::endl;
     std::cout << "Average sample time (ms)" <<  1000*stats_utils::Average(sample_time, &stddev) << std::endl;
-
-    std::vector<double> cost_duration;
-    std::vector<double> cost_avg;
-    std::vector<double> filtered_points;
-    std::vector<double> sort_duration;
-    std::vector<double> sort_avg;
     
     for(uint i = 0; i < sample_log.size(); i++) {
       SampleLog s = sample_log[i];
@@ -276,24 +232,7 @@ void StoppingTrajectory::writeLog(){
         << s.variance << "\n" 
         << s.stddev << "\n" 
         << s.t_sample << std::endl;
-      
-      cost_duration.push_back(s.t_cost);
-      cost_avg.push_back(s.t_cost_per_point);
-      filtered_points.push_back(s.num_free_points);
-      sort_duration.push_back(s.t_sort);
-      sort_avg.push_back(s.t_sort_per_point);
     }
-
-    double cost_time = stats_utils::Average(cost_duration, &stddev);
-    double cost_avg_time = stats_utils::Average(cost_avg, &stddev);
-    double filtered_points_avg = stats_utils::Average(filtered_points, &stddev);
-    double sort_log = stats_utils::Average(sort_duration, &stddev);
-    double sort_avg_time = stats_utils::Average(sort_avg, &stddev);
-    
-    std::cout << "Cost time, Cost per point time, # filtered points, Sort time, Sort time per point" << std::endl;
-    std::cout << cost_time*1000 << "\n" << cost_avg_time*1000 << "\n" << filtered_points_avg << "\n" << sort_log*1000 << "\n" << sort_avg_time*1000 << std::endl;
   }
-
-
 }
 }

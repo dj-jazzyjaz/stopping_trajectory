@@ -35,7 +35,10 @@ std::vector<double> StoppingTrajectory::getCoefficients(double pos, double vel, 
   //Solve for x such that Ax = B
   gu::Mat44 A = gu::Mat44(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16);
 
-  gu::Mat44 inv = A.inv();
+  Eigen::Matrix<double, 4, 4> emat = A.eigen();
+  emat = emat.inverse();
+  gu::Mat44 inv = gu::MatrixNxNBase<double, 4>(emat);
+
   gu::Vec4 B = gu::Vec4(-b1, -b2, -b3, -b4);
   gu::Vec4 x = inv * B;
   double c5 = x.data[0];
@@ -89,7 +92,10 @@ std::vector<double> StoppingTrajectory::getCoefficientsWithGoalPos(double pos, d
   boost::array<double, 25> a = {{a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, 
                                 a16, a17, a18, a19, a20, a21, a22, a23, a24, a25}};
   gu::MatrixNxNBase<double, 5> A = gu::MatrixNxNBase<double, 5>(a);
-  gu::MatrixNxNBase<double, 5> inv = A.inv();
+  
+  Eigen::Matrix<double, 5, 5> emat = A.eigen();
+  emat = emat.inverse();
+  gu::MatrixNxNBase<double, 5> inv = gu::MatrixNxNBase<double, 5>(emat);
 
   boost::array<double, 5> b = {{-b1, -b2, -b3, -b4, -b5}};
   gu::VectorNBase<double, 5> B = gu::VectorNBase<double, 5>(b);
@@ -301,48 +307,9 @@ bool StoppingTrajectory::checkTrajectoryHOD(const std::vector<std::vector<double
                       fabs(point.data[1]) < thresholds[i] && 
                       fabs(point.data[2]) < thresholds[i]; });
 
-    //Print max and min values
-    /*std::cout << "Order: " << i << "x: (" << vu::Min(x) << "," << vu::Max(x) << ") y: (" 
-    << vu::Min(y) << "," << vu::Max(y) << ") z: (" << vu::Min(z) << "," << vu::Max(z) << ")" 
-    << std::endl; */
-
     if (evaluated_poly.size() > 0)
       return false;
   }
   return true;
-}
-
-/**
- * @brief Caclulates the duration of a trajectory from state to goal_pos using an heuristic
- * WIP: Find a better heuristic to use. Current heuristic is too unreliable. 
- * */
-double StoppingTrajectory::getTrajectoryDuration(state_t state, gu::Vec3 goal_pos)
-{
-  std::vector<double> T; // Candidate durations, will take max
-  double MAX_ACC = 1;    // Maximum allowed acceleration in any dimension
-  // For each dimension x, y, z
-  for (int i = 0; i < 3; i++)
-  {
-    // Time for velocity to reach 0
-    double del_pos = goal_pos.data[i] - state.pos.data[i];
-    T.push_back(std::fabs(del_pos / state.vel.data[i]));
-
-    // time for acceleration to reach 0
-    double del_vel = state.vel.data[i];
-    // T.push_back(std::fabs(del_vel/state.acc.data[i]));
-    T.push_back(std::fabs(del_vel / MAX_ACC));
-
-    // time for jerk to reach 0
-    //double del_acc = state.acc.data[i];
-    //T.push_back(std::fabs(del_acc/state.jerk.data[i]));
-  }
-
-  // Print T values
-  for (uint i = 0; i < T.size(); i++)
-  {
-    std::cout << "T: " << T[i] << std::endl;
-  }
-  std::cout << "Max T: " << vu::Max(T) << std::endl;
-  return std::max(0.5, vu::Max(T));
 }
 } // namespace planner

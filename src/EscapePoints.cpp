@@ -66,6 +66,7 @@ void StoppingTrajectory::getRectangleGrid(double x1, double x2, double y1, doubl
 
 /** @brief Generates points in rectangular prism grid, centered about the velocity vector of the 
  * vehicle, with dimensions based off the velocity and parameters grid_length_ and grid_width_.
+ * Writes points to `rect_pts`
  * */
 void StoppingTrajectory::generateGridPoints(gu::Vec3& pos, gu::Vec3& vel, double yaw, std::vector<gu::Vec3>& rect_pts) {
   double gridLength = grid_length_ * vel.norm();
@@ -91,9 +92,6 @@ void StoppingTrajectory::generateGridPoints(gu::Vec3& pos, gu::Vec3& vel, double
   for (float i = sample_length_; i < (float) gridLength; i+=sample_length_) {
     rect_pts.push_back(pos + i * y_axis);
   }
-
-  // Remove points with z < 0
-  vu::RemoveAllIf(rect_pts, [](gu::Vec3 point){return point.data[2] < 0;});
 }
 
 /** @brief Calculates the closest distance from a point in 3-space to a vector line. line_point is a 

@@ -22,6 +22,7 @@ bool StoppingTrajectory::initialize(const ros::NodeHandle &n)
   escape_points_vis_pub_ = nh.advertise<visualization_msgs::MarkerArray>("escape_points_vis", 1);
   stop_traj_vis_pub_ = nh.advertise<visualization_msgs::MarkerArray>("stop_traj_vis", 1);
   sample_space_vis_pub_ = nh.advertise<visualization_msgs::Marker>("sample_space_vis", 1);
+  neighbors_vis_pub_ = nh.advertise<visualization_msgs::MarkerArray>("stop_neighbors_vis", 1);
   event_pub_ = nh.advertise<std_msgs::String>("event", 0, true);
   
   getParams();
@@ -88,7 +89,7 @@ void StoppingTrajectory::getParams()
   pu::get("command_stop/angle_weight", stop_angle_weight_);
   pu::get("command_stop/bias", stop_bias_);
   pu::get("compute_thresh", compute_thresh_);
-  //pu::get("log", record_);
+
   record_ = false;
   
   red_.a = 1;

@@ -10,18 +10,12 @@ namespace stu = stats_utils;
 
 /** @brief Sort escape_points by corresponding costs, where costs[i] is the cost for escape_points[i].
  * Also sorts `costs` in place.
- * 
- * Returns the time to sort in seconds
  */
-double StoppingTrajectory::sortByCost(std::vector<float>& costs, 
+void StoppingTrajectory::sortByCost(std::vector<float>& costs, 
                           std::vector<gu::Vec3>& escape_points) {  
-  std::clock_t clock_start = std::clock();
-
   std::vector<gu::Vec3> escape_points_sorted;
   vu::ArgSort(escape_points, &escape_points_sorted, costs, &costs);
-
-  double sort_time = (std::clock() - clock_start) / (double) CLOCKS_PER_SEC;
-  return sort_time;
+  escape_points = escape_points_sorted;
 }
 
 /** @brief Calculates cost for each point in `escape_points` and stores cost in `costs`.
@@ -49,49 +43,44 @@ void StoppingTrajectory::getFreePoints(gu::Vec3& pos, gu::Vec3& vel,
 std::vector<gu::Vec3> StoppingTrajectory::sampleEscapePoints(gu::Vec3& pos, gu::Vec3& vel, 
                     std::vector<gu::Vec3>& escape_points, SampleLog& log_entry) {  
   int num_escape_points_init = escape_points.size();
-  std::clock_t clock_start = std::clock();
+ 
   std::vector<float> costs;
-  getFreePoints(pos, vel, escape_points, costs); /* Calculate cost of each point */
-  double cost_duration = (std::clock() - clock_start) / (double) CLOCKS_PER_SEC;
+  // Calculate cost for each point, only keeping free points
+  getFreePoints(pos, vel, escape_points, costs); 
 
   if(escape_points.size() == 0) {
     return escape_points;
   }
 
   if(record_) {
-    log_entry.t_cost = cost_duration;
-    log_entry.t_cost_per_point = cost_duration/num_escape_points_init;
     log_entry.num_free_points = escape_points.size();
   }
   
   std::clock_t sample_clock_start = std::clock();
-  double sort_duration = 0;
 
   // Weighted random sample
   if(sample_method_ == weighted_random) {
     weightedRandomSample(costs, escape_points);
-    sort_duration = sortByCost(costs, escape_points);
+    sortByCost(costs, escape_points);
   }
 
   // Stratified sample
   if(sample_method_ == stratified) {
-    sort_duration = sortByCost(costs, escape_points); // Pre sort the points
+    sortByCost(costs, escape_points); // Pre sort the points
     stratifiedSample(costs, escape_points);
   }
 
   // Sample best n points
   if(sample_method_ == best_n) {
-    sort_duration = sortByCost(costs, escape_points);
+    sortByCost(costs, escape_points);
     escape_points = vu::Slice(escape_points, 0, sample_num_);
     costs = vu::Slice(costs, 0, sample_num_);
   }
   
-  // Log timing info
+  // Log sample info
   if (record_) {
     log_entry.t_sample = (std::clock() - sample_clock_start) / (double) CLOCKS_PER_SEC;
     log_entry = logSampleStatistics(escape_points, log_entry);
-    log_entry.t_sort = sort_duration;
-    log_entry.t_sort_per_point = sort_duration/escape_points.size();
     log_entry.num_sample_points = escape_points.size();
     sample_log.push_back(log_entry);
   }

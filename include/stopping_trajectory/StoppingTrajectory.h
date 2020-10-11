@@ -25,17 +25,12 @@ namespace planner {
 namespace gu = geometry_utils;
 
 typedef struct {
-    int num_points_initial;   // Number of initial points generated
-    float t_cost;             // Duration to calculate costs for all points
-    float t_cost_per_point;   // Duration to calculate cost per 1 point
-  
+    int num_points_initial;   // Number of initial points generatedt
     int num_free_points;      // Number of points in free space
-    float t_sort;             // Duration to sort escape points
-    float t_sort_per_point;   // Duration to sort point per 1 point
 
     int num_sample_points;     // Number of points selected from sampling
     float sample_space_width;  // Physical width of sample area
-    float sample_space_length; // Physical lenght of sample area
+    float sample_space_length; // Physical length of sample area
     float variance;            // Variance of sampled points from sample mean
     float stddev;              // Sqrt of variance
     float t_sample;            // Time to perform sample  
@@ -76,7 +71,6 @@ private:
     bool checkTrajectoryCollisionGlobal(const std::vector<state_t>& traj);
     bool checkTrajectoryHOD(const std::vector<std::vector<double>>& coefficients, ros::Duration& duration, std::vector<double> thresholds);
     bool checkAccelThreshold(const std::vector<std::vector<double>>& coefficients, ros::Duration &duration, double acc_threshold);
-    double getTrajectoryDuration(state_t state, gu::Vec3 goal_pos);
 
     // Escape Points
     void getEscapePoints(gu::Vec3& pos, gu::Vec3& vel, double yaw, std::vector<gu::Vec3>& escapePoints);
@@ -87,7 +81,7 @@ private:
    
     // Sample Points
     void getFreePoints(gu::Vec3& pos, gu::Vec3& vel, std::vector<gu::Vec3>& escape_points, std::vector<float>& costs);
-    double sortByCost(std::vector<float>& costs, std::vector<gu::Vec3>& escape_points);
+    void sortByCost(std::vector<float>& costs, std::vector<gu::Vec3>& escape_points);
     std::vector<gu::Vec3> sampleEscapePoints(gu::Vec3& pos, gu::Vec3& vel, std::vector<gu::Vec3>& escape_points, SampleLog& log_entry);
     void stratifiedSample(std::vector<float>& sorted_costs, std::vector<gu::Vec3>& escape_points);
     std::vector<int> sampleSlice(std::vector<float> sorted_costs, int start, int end, int num_sample);
@@ -98,7 +92,6 @@ private:
     void publishTrajectoryVis();
     void visualizeEscapePoints(std::vector<gu::Vec3> escape_points, std::vector<float> costs);
     void visualizeSampleSpace(std::vector<gu::Vec3> rect_pts);
-    void visualizeNearestObstacle(gu::Vec3 vehicle_pos, gu::Vec3 obstacle_pos, double vehicle_yaw, gu::Vec3 vehicle_vel, gu::Vec3 b2, gu::Vec3 b3);
     void visualizeNeighborhood(std::vector<gu::Vec3> neighbor_points, std::vector<float> neighbor_costs, gu::Vec3 vehicle_pos, gu::Vec3 vehicle_vel);
     
     // Command Stop
@@ -138,6 +131,7 @@ private:
     ros::Publisher escape_points_vis_pub_;
     ros::Publisher stop_traj_vis_pub_;
     ros::Publisher sample_space_vis_pub_;
+    ros::Publisher neighbors_vis_pub_;
     ros::Publisher wpts_pub;
     ros::Publisher event_pub_;
     ros::Subscriber joy_sub_;
