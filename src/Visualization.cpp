@@ -180,10 +180,10 @@ void StoppingTrajectory::visualizeNeighborhood(std::vector<gu::Vec3> neighbor_po
     // Give trajectory color ranging between blue and red based off index
     std_msgs::ColorRGBA color;
     if(cost > 0) {
-      printf("green\n");
+      if (verbose_) printf("green\n");
       color = green_;
     } else {
-      printf("red\n");
+      if (verbose_) printf("red\n");
       color = red_;
     }
     marker.color = color;

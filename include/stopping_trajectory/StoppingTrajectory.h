@@ -33,7 +33,7 @@ typedef struct {
     float sample_space_length; // Physical length of sample area
     float variance;            // Variance of sampled points from sample mean
     float stddev;              // Sqrt of variance
-    float t_sample;            // Time to perform sample  
+    float t_sample;            // Time to perform sample
 } SampleLog;
 
 class StoppingTrajectory
@@ -153,6 +153,8 @@ private:
     std::ofstream log_file_;
     bool record_;
 
+    bool verbose_; // determine how much to print to console
+    bool publish_hover_after_stop_; // determine whether to publish a hover after stopping
 };
 
 

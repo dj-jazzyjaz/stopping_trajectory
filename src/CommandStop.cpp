@@ -63,25 +63,28 @@ void StoppingTrajectory::commandStop(const ros::TimerEvent &, float stopping_tra
   // Get distance and location of nearest obstacle
   float *neigh_point = new float[3];
   float dist_from_obstacle = global_map_.find_nearest_neighbor(ref_state.pos.x(), ref_state.pos.y(), ref_state.pos.z(), neigh_point);
-  
+
   // Stop is distance is too small
   if (dist_from_obstacle < stopping_radius_)
   {
-    std::cout << "======== Generate stopping command ========" << std::endl;
-    ROS_INFO("[Command Stop] Distance from obstacle: %f, Stoping radius: %f", dist_from_obstacle, stopping_radius_);
+    ROS_WARN("[CommandStop] Generate stopping command because stop distance is too small");;
+    ROS_INFO("[CommandStop] Distance from obstacle: %f, Stopping radius: %f", dist_from_obstacle, stopping_radius_);
     generateCollisionFreeWaypoints(ref_state, ref_time, stopping_trajectory_duration);
-    std_msgs::String event_msg;
-    event_msg.data = "HoverEvent";
-    event_pub_.publish(event_msg);
+    if (publish_hover_after_stop_)
+    {
+      std_msgs::String event_msg;
+      event_msg.data = "HoverEvent";
+      event_pub_.publish(event_msg);
+    }
   }
 
   // Get points in neighbors
   float neighbor_radius = 3.0f;
-  std::vector<pcl::PointXYZ> neighbors; 
+  std::vector<pcl::PointXYZ> neighbors;
   global_map_.check_neighbor_in_radius(ref_state.pos.x(), ref_state.pos.y(), ref_state.pos.z(), neighbor_radius, &neighbors);
-  std::cout << "Num neighbors" << neighbors.size() << std::endl;
+  if (verbose_) std::cout << "Num neighbors" << neighbors.size() << std::endl;
 
-  
+
   if (neighbors.size() == 0) return;
 
   std::vector<gu::Vec3> relevant_neighbors;
@@ -119,24 +122,33 @@ void StoppingTrajectory::commandStop(const ros::TimerEvent &, float stopping_tra
   // Print stuff 
   int i = 0;
   for(auto n: relevant_neighbors) {
-    std::cout << "Neighbor " << i << std::endl;
     gu::Vec3 neighbor_offset = n - ref_state.pos;
-    neighbor_offset.print();
-    std::cout << neighbor_costs[i] << std::endl;
+    if (verbose_)
+    {
+      std::cout << "Neighbor " << i << std::endl;
+      neighbor_offset.print();
+      std::cout << neighbor_costs[i] << std::endl;
+    }
     i++;
   }
 
-  std::cout << "Velocity" << std::endl;
-  ref_state.vel.normalize().print();
- 
+  if (verbose_)
+  {
+    std::cout << "Velocity" << std::endl;
+    ref_state.vel.normalize().print();
+  }
+
   if(relevant_neighbors.size() > 0) visualizeNeighborhood(relevant_neighbors, neighbor_costs, ref_state.pos, ref_state.vel);
 
   if(relevant_neighbors.size() > 0 && vu::Min(neighbor_costs) < 0) {
-    std::cout << "======== Generate stopping command ========" << std::endl;
+    ROS_ERROR("[CommandStop] Generate stopping command due to lack of neighbors");
     generateCollisionFreeWaypoints(ref_state, ref_time, stopping_trajectory_duration);
-    std_msgs::String event_msg;
-    event_msg.data = "HoverEvent";
-    event_pub_.publish(event_msg);
+    if (publish_hover_after_stop_)
+    {
+      std_msgs::String event_msg;
+      event_msg.data = "HoverEvent";
+      event_pub_.publish(event_msg);
+    }
   }
 
   return;

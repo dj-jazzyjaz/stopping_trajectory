@@ -1,5 +1,4 @@
 hod_threshold:
-
   vel: 50
   acc: 10
   jerk: 200
@@ -9,8 +8,8 @@ cost_function:  # Weights for computing cost of escape points
   obstacle_dist_weight: 0.3  # Make larger to reward distance from obstacle
 collision_radius: 0.2 # Used for checking collision of points on trajectories
 command_stop:
-  stopping_radius: 0.5 # Minimum stopping radius
-  bias: 0.9 # Make larger to stop earlier (i.e., more likely to stop given current conditions). 
+  stopping_radius: 0.3 # Minimum stopping radius
+  bias: 0.0 # Make larger to stop earlier (i.e., more likely to stop given current conditions).
   dist_weight: 0.8 # Make larger to reward high distance from obstacle.
   angle_weight: 1.2 # Make larger to reward a large angle seperate between vehicle's current heading and direction of nearest obstacle
   vel_weight: 0.6 # Make larger to penalize high velocities.
@@ -27,3 +26,8 @@ stratified_sample:
   sample_num: [10, 40, 30, 20] # max number of points to sample from each strata
 compute_thresh: 0.01 # do not attempt computing escape points if vehicle velocity is below this threshold
 log: 0 # 0 for should not log, 1 otherwise
+
+debug:
+  verbose: false # determine how much information to print to console
+stopping:
+  publish_hover_after_stop: false # determine whether to publish a hover to FSM after stopping

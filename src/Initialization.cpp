@@ -89,6 +89,8 @@ void StoppingTrajectory::getParams()
   pu::get("command_stop/angle_weight", stop_angle_weight_);
   pu::get("command_stop/bias", stop_bias_);
   pu::get("compute_thresh", compute_thresh_);
+  pu::get("debug/verbose", verbose_);
+  pu::get("stopping/publish_hover_after_stop", publish_hover_after_stop_);
 
   record_ = false;
   
