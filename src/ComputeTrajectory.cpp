@@ -203,7 +203,7 @@ bool StoppingTrajectory::checkTrajectoryCollisionGlobal(const std::vector<state_
   float nearest_dist;
   for (uint i = 0; i < traj.size(); i++)
   {
-    float dist = global_map_.find_nearest_neighbor(traj[i].pos(0), traj[i].pos(1), traj[i].pos(2));
+    float dist = findNearestNeighbor(traj[i].pos);
     if (dist < collision_radius_)
     {
       // std::cout << "Collision detected along trajectory, within " << dist << std::endl;
@@ -218,6 +218,16 @@ bool StoppingTrajectory::checkTrajectoryCollisionGlobal(const std::vector<state_
   }
 
   // std::cout << "Trajectory is collision free, nearest obstacle:" << nearest_dist << std::endl;
+  return true;
+}
+
+/**
+ * @brief Checks each point along a trajectory for collisions, using the GMM Map
+ * Returns true if no collisions, false if collision detected.
+ * */
+bool StoppingTrajectory::checkTrajectoryCollisionGMM(const std::vector<state_t> &traj)
+{
+  // TODO: GMM Map 
   return true;
 }
 

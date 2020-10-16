@@ -1,5 +1,4 @@
 hod_threshold:
-
   vel: 50
   acc: 10
   jerk: 200
@@ -27,3 +26,4 @@ stratified_sample:
   sample_num: [10, 40, 30, 20] # max number of points to sample from each strata
 compute_thresh: 0.01 # do not attempt computing escape points if vehicle velocity is below this threshold
 log: 0 # 0 for should not log, 1 otherwise
+map: 1 # 0=global map representation, 1=GMM

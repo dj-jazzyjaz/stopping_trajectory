@@ -2,6 +2,7 @@
 
 #include <ros/ros.h>
 #include <sensor_msgs/Joy.h>
+#include <collision_checker/CollisionChecker.h>
 #include <control_arch/utils/state_t.h>
 #include <control_arch/GetReferenceState.h>
 #include <control_arch/Waypoints.h>
@@ -41,15 +42,20 @@ class StoppingTrajectory
 public:
     StoppingTrajectory();
     ~StoppingTrajectory();
-    bool initialize(const ros::NodeHandle &n);
+    bool initialize(const ros::NodeHandle &n, const std::shared_ptr<CollisionChecker>& collision_checker=nullptr);
     void generateWaypoints(state_t state, const ros::Time& reference_time, float stopping_trajectory_duration=1.0);
     void generateCollisionFreeWaypoints(state_t state, const ros::Time& reference_time, float stopping_trajectory_duration=2.0);
     void commandStop(const ros::TimerEvent &, float stopping_trajectory_duration=2.0);
     
 private:
     enum SamplingMethod {none, weighted_random, stratified, best_n};
+    
+    // Collision Checker
+    std::shared_ptr<CollisionChecker> collision_checker_;
+    
     // Init
-    bool initMap();
+    bool initGlobalMap();
+    bool initGMMMap(const std::shared_ptr<CollisionChecker>& collision_checker);
     void getParams();
     void flagsCallback(const control_arch::FsmFlags::ConstPtr& msg);
     bool flagEnabledQ(const std::string& flag);
@@ -69,6 +75,7 @@ private:
     void getPolynomialsWithPos(const state_t& state, gu::Vec3 goal_pos, double t_stop, std::vector<std::vector<double>>& coefficients);
     void populateTrajectory(const ros::Time &reference_time, int traj_length, const std::vector<std::vector<double>>& coefficients, ros::Duration duration, double step, std::vector<state_t> &traj);
     bool checkTrajectoryCollisionGlobal(const std::vector<state_t>& traj);
+    bool checkTrajectoryCollisionGMM(const std::vector<state_t>& traj);
     bool checkTrajectoryHOD(const std::vector<std::vector<double>>& coefficients, ros::Duration& duration, std::vector<double> thresholds);
     bool checkAccelThreshold(const std::vector<std::vector<double>>& coefficients, ros::Duration &duration, double acc_threshold);
 
@@ -97,6 +104,8 @@ private:
     // Command Stop
     void stopWithinDistance(const ros::TimerEvent &);
     float freePointsRatio(state_t ref_state);
+    double findNearestNeighbor(gu::Vec3 pos, float neighbor[3]=NULL);
+    bool checkNeighborInRadius(gu::Vec3 pos, float neighbor_radius, std::vector<pcl::PointXYZ>* neighbors=nullptr);
 
     // Parameters
     double vel_threshold_;
@@ -126,6 +135,9 @@ private:
     int sample_num_; 
     std::vector<float> strat_sample_fraction_;
     std::vector<int> strat_sample_num_;
+
+    // Mapping
+    int map_rep_;
 
     // Publishers & Subscribers
     ros::Publisher escape_points_vis_pub_;

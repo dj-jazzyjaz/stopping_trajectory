@@ -25,7 +25,7 @@ void StoppingTrajectory::stopWithinDistance(const ros::TimerEvent &)
 
   traj_.markers.clear();
 
-  float dist_from_obstacle = global_map_.find_nearest_neighbor(ref_state.pos.x(), ref_state.pos.y(), ref_state.pos.z());
+  float dist_from_obstacle = findNearestNeighbor(ref_state.pos);
   if (dist_from_obstacle < stopping_radius_)
   {
     std::cout << "Generate escape path, dist=" << dist_from_obstacle << std::endl;
@@ -62,7 +62,7 @@ void StoppingTrajectory::commandStop(const ros::TimerEvent &, float stopping_tra
 
   // Get distance and location of nearest obstacle
   float *neigh_point = new float[3];
-  float dist_from_obstacle = global_map_.find_nearest_neighbor(ref_state.pos.x(), ref_state.pos.y(), ref_state.pos.z(), neigh_point);
+  float dist_from_obstacle = findNearestNeighbor(ref_state.pos, neigh_point);
   
   // Stop is distance is too small
   if (dist_from_obstacle < stopping_radius_)
@@ -78,12 +78,8 @@ void StoppingTrajectory::commandStop(const ros::TimerEvent &, float stopping_tra
   // Get points in neighbors
   float neighbor_radius = 3.0f;
   std::vector<pcl::PointXYZ> neighbors; 
-  global_map_.check_neighbor_in_radius(ref_state.pos.x(), ref_state.pos.y(), ref_state.pos.z(), neighbor_radius, &neighbors);
-  std::cout << "Num neighbors" << neighbors.size() << std::endl;
-
+  if (!checkNeighborInRadius(ref_state.pos, neighbor_radius, &neighbors)) return;
   
-  if (neighbors.size() == 0) return;
-
   std::vector<gu::Vec3> relevant_neighbors;
   std::vector<float> neighbor_costs;
   double offset_angle;
@@ -140,6 +136,24 @@ void StoppingTrajectory::commandStop(const ros::TimerEvent &, float stopping_tra
   }
 
   return;
+}
+
+double StoppingTrajectory::findNearestNeighbor(gu::Vec3 pos, float neighbor[3]) {
+  if(map_rep_ == 0) {
+    // Global map
+    return global_map_.find_nearest_neighbor(pos.x(), pos.y(), pos.z(), neighbor);
+  } else if (map_rep_ == 1) {
+    // TODO: GMM map
+  }
+}
+
+bool StoppingTrajectory::checkNeighborInRadius(gu::Vec3 pos, float neighbor_radius, std::vector<pcl::PointXYZ>* neighbors) {
+  if(map_rep_ == 0) {
+    // Global map
+    return global_map_.check_neighbor_in_radius(pos.x(), pos.y(), pos.z(), neighbor_radius, neighbors);
+  } else if (map_rep_ == 1) {
+    // TODO: GMM map
+  }
 }
 
 } // namespace planner

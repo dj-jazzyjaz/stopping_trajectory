@@ -6,7 +6,7 @@ namespace gu = geometry_utils;
 namespace pu = parameter_utils;
 namespace gr = gu::ros;
 
-bool StoppingTrajectory::initialize(const ros::NodeHandle &n)
+bool StoppingTrajectory::initialize(const ros::NodeHandle &n, const std::shared_ptr<CollisionChecker>& collision_checker)
 {
   ros::NodeHandle nh(n); //make copy of n
   flags_sub_ = nh.subscribe("flags", 0, &StoppingTrajectory::flagsCallback, this);
@@ -27,8 +27,12 @@ bool StoppingTrajectory::initialize(const ros::NodeHandle &n)
   
   getParams();
 
-  if (!initMap())
-    return false;
+  if (map_rep_ == 0) {
+    if (!initGlobalMap()) return false;
+  } else if (map_rep_ == 1) {
+    if (!initGMMMap(collision_checker)) return false;
+  }
+  
 
   if (!pu::get("frame_id/fixed", fixed_frame_id_))
   {
@@ -36,15 +40,13 @@ bool StoppingTrajectory::initialize(const ros::NodeHandle &n)
     return false;
   }
 
-
   ROS_INFO("[Stopping Trajectory] stopping_trajectory initialzed");
   record_ = true;
   return true;
 }
 
-bool StoppingTrajectory::initMap()
+bool StoppingTrajectory::initGlobalMap()
 {
-  //Initialize global map
   std::string map_name;
   if (!pu::get("map_filename", map_name))
     return false;
@@ -57,6 +59,18 @@ bool StoppingTrajectory::initMap()
     ROS_INFO("[Stopping Trajectory] Could not get voxel grid map");
     return false;
   }
+  return true;
+}
+
+bool StoppingTrajectory::initGMMMap(const std::shared_ptr<CollisionChecker>& collision_checker)
+{
+  if(collision_checker_ == nullptr) {
+    ROS_ERROR("[Stopping Trajectory] Collision checker shared pointer was null, failed to initialize map");
+    return false;
+  }
+  collision_checker_ = collision_checker;
+
+  // TODO: GMM Map
   return true;
 }
 
@@ -89,6 +103,7 @@ void StoppingTrajectory::getParams()
   pu::get("command_stop/angle_weight", stop_angle_weight_);
   pu::get("command_stop/bias", stop_bias_);
   pu::get("compute_thresh", compute_thresh_);
+  pu::get("map", map_rep_);
 
   record_ = false;
   
