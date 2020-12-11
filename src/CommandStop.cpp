@@ -25,7 +25,7 @@ void StoppingTrajectory::stopWithinDistance(const ros::TimerEvent &)
 
   traj_.markers.clear();
 
-  float dist_from_obstacle = global_map_.find_nearest_neighbor(ref_state.pos.x(), ref_state.pos.y(), ref_state.pos.z());
+  float dist_from_obstacle = findNearestNeighbor(ref_state.pos, NULL);
   if (dist_from_obstacle < stopping_radius_)
   {
     std::cout << "Generate escape path, dist=" << dist_from_obstacle << std::endl;
@@ -62,7 +62,7 @@ void StoppingTrajectory::commandStop(const ros::TimerEvent &, float stopping_tra
 
   // Get distance and location of nearest obstacle
   float *neigh_point = new float[3];
-  float dist_from_obstacle = global_map_.find_nearest_neighbor(ref_state.pos.x(), ref_state.pos.y(), ref_state.pos.z(), neigh_point);
+  float dist_from_obstacle = findNearestNeighbor(ref_state.pos, neigh_point);
 
   // Stop is distance is too small
   if (dist_from_obstacle < stopping_radius_)
@@ -79,9 +79,9 @@ void StoppingTrajectory::commandStop(const ros::TimerEvent &, float stopping_tra
   }
 
   // Get points in neighbors
-  float neighbor_radius = 3.0f;
+  double neighbor_radius = 3.0f;
   std::vector<pcl::PointXYZ> neighbors;
-  global_map_.check_neighbor_in_radius(ref_state.pos.x(), ref_state.pos.y(), ref_state.pos.z(), neighbor_radius, &neighbors);
+  queryRadiusNeighbors(ref_state.pos, neighbor_radius, &neighbors);
   if (verbose_) std::cout << "Num neighbors" << neighbors.size() << std::endl;
 
 

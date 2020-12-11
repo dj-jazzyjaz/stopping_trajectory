@@ -28,6 +28,8 @@ compute_thresh: 0.01 # do not attempt computing escape points if vehicle velocit
 log: 0 # 0 for should not log, 1 otherwise
 
 debug:
-  verbose: false # determine how much information to print to console
+  verbose: true # determine how much information to print to console
 stopping:
   publish_hover_after_stop: false # determine whether to publish a hover to FSM after stopping
+
+map_scope: local # one of{local, global}

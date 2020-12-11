@@ -79,7 +79,7 @@ void StoppingTrajectory::generateCollisionFreeWaypoints(state_t state, const ros
         std::vector<state_t> traj_wpts;
         populateTrajectory(reference_time, num_intervals, polyCoeffs, 
                             duration, interval_step, traj_wpts);
-        bool isCollisionFree = checkTrajectoryCollisionGlobal(traj_wpts);
+        bool isCollisionFree = checkTrajectoryCollision(traj_wpts);
         
         query_duration = (std::clock() - query_start) / (double) CLOCKS_PER_SEC;
         queryDurations.push_back(query_duration);
@@ -142,4 +142,25 @@ void StoppingTrajectory::publishTrajectory(std::vector<state_t> traj_wpts, float
 
     wpts_pub.publish(msg);
 }
+
+float StoppingTrajectory::findNearestNeighbor(const gu::Vec3& position, float neighbor[3]) {
+    float dist;
+    if(map_scope_ == "local") {
+        dist = collision_checker_->local_map_kdtree_->local_map_->queryNearestNeighbor<float>(position.x(), position.y(), position.z(), neighbor);
+    } else { // global
+        dist = global_map_.find_nearest_neighbor(position.x(), position.y(), position.z(), neighbor);
+    }
+    return dist;
+}
+
+bool StoppingTrajectory::queryRadiusNeighbors(const gu::Vec3& position, double r,  std::vector<pcl::PointXYZ>* neighbors) {
+    bool hasNeighbors;
+    if (map_scope_ == "local") {
+        hasNeighbors = collision_checker_->local_map_kdtree_->local_map_->queryRadiusNeighbors(position.x(), position.y(), position.z(), r, neighbors);    
+    } else {  // global
+        hasNeighbors = global_map_.check_neighbor_in_radius(position.x(), position.y(), position.z(), r, neighbors);
+    }
+    return hasNeighbors;
+}
+
 } // namespace planner

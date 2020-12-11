@@ -6,7 +6,7 @@ namespace gu = geometry_utils;
 namespace pu = parameter_utils;
 namespace gr = gu::ros;
 
-bool StoppingTrajectory::initialize(const ros::NodeHandle &n)
+bool StoppingTrajectory::initialize(const ros::NodeHandle &n, const std::unique_ptr<CollisionChecker>& collision_checker)
 {
   ros::NodeHandle nh(n); //make copy of n
   flags_sub_ = nh.subscribe("flags", 0, &StoppingTrajectory::flagsCallback, this);
@@ -27,7 +27,7 @@ bool StoppingTrajectory::initialize(const ros::NodeHandle &n)
   
   getParams();
 
-  if (!initMap())
+  if (map_scope_ == "global" && !initGlobalMap())
     return false;
 
   if (!pu::get("frame_id/fixed", fixed_frame_id_))
@@ -42,7 +42,7 @@ bool StoppingTrajectory::initialize(const ros::NodeHandle &n)
   return true;
 }
 
-bool StoppingTrajectory::initMap()
+bool StoppingTrajectory::initGlobalMap()
 {
   //Initialize global map
   std::string map_name;
@@ -91,6 +91,7 @@ void StoppingTrajectory::getParams()
   pu::get("compute_thresh", compute_thresh_);
   pu::get("debug/verbose", verbose_);
   pu::get("stopping/publish_hover_after_stop", publish_hover_after_stop_);
+  pu::get("map_scope", map_scope_);
 
   record_ = false;
   
