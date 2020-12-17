@@ -31,3 +31,4 @@ debug:
   verbose: false # determine how much information to print to console
 stopping:
   publish_hover_after_stop: false # determine whether to publish a hover to FSM after stopping
+map_scope: local # one of {local, global}

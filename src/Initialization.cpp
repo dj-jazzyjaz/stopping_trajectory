@@ -6,7 +6,7 @@ namespace gu = geometry_utils;
 namespace pu = parameter_utils;
 namespace gr = gu::ros;
 
-bool StoppingTrajectory::initialize(const ros::NodeHandle &n)
+bool StoppingTrajectory::initialize(const ros::NodeHandle &n, const std::shared_ptr<CollisionChecker> collision_checker)
 {
   ros::NodeHandle nh(n); //make copy of n
   flags_sub_ = nh.subscribe("flags", 0, &StoppingTrajectory::flagsCallback, this);
@@ -27,9 +27,18 @@ bool StoppingTrajectory::initialize(const ros::NodeHandle &n)
   
   getParams();
 
-  if (!initMap())
+  if (!initGlobalMap()) return false;
+  if (!initGMMMap(collision_checker)) return false;
+  // TODO: Change back to this later
+  /*if (map_scope_ == "global") {
+    if (!initGlobalMap()) return false;
+  } else if (map_scope_ == "local") {
+    if (!initGMMMap(collision_checker)) return false;
+  } else {
+    ROS_ERROR("[Collision Checker] Invalid map type. Must be one of {global, gmm}");
     return false;
-
+  }*/
+  
   if (!pu::get("frame_id/fixed", fixed_frame_id_))
   {
     ROS_INFO("[Stopping Trajectory] Could not get frame_id");
@@ -42,7 +51,7 @@ bool StoppingTrajectory::initialize(const ros::NodeHandle &n)
   return true;
 }
 
-bool StoppingTrajectory::initMap()
+bool StoppingTrajectory::initGlobalMap()
 {
   //Initialize global map
   std::string map_name;
@@ -57,6 +66,18 @@ bool StoppingTrajectory::initMap()
     ROS_INFO("[Stopping Trajectory] Could not get voxel grid map");
     return false;
   }
+  return true;
+}
+
+bool StoppingTrajectory::initGMMMap(const std::shared_ptr<CollisionChecker> collision_checker)
+{
+  if(collision_checker == nullptr) {
+    ROS_ERROR("[Stopping Trajectory] Collision checker shared pointer was null, failed to initialize map");
+    return false;
+  }
+  collision_checker_ = collision_checker;
+
+  // TODO: GMM Map
   return true;
 }
 
@@ -91,7 +112,7 @@ void StoppingTrajectory::getParams()
   pu::get("compute_thresh", compute_thresh_);
   pu::get("debug/verbose", verbose_);
   pu::get("stopping/publish_hover_after_stop", publish_hover_after_stop_);
-
+  pu::get("map_scope", map_scope_);
   record_ = false;
   
   red_.a = 1;

@@ -20,6 +20,7 @@
 #include <cpp_utils/stats_utils.h>
 #include <cpp_utils/sample_utils.h>
 #include <std_msgs/String.h>
+#include <collision_checker/CollisionChecker.h>
 
 namespace planner {
 namespace gu = geometry_utils;
@@ -41,15 +42,20 @@ class StoppingTrajectory
 public:
     StoppingTrajectory();
     ~StoppingTrajectory();
-    bool initialize(const ros::NodeHandle &n);
+    bool initialize(const ros::NodeHandle &n,  const std::shared_ptr<CollisionChecker> collision_checker=nullptr);
     void generateWaypoints(state_t state, const ros::Time& reference_time, float stopping_trajectory_duration=1.0);
     void generateCollisionFreeWaypoints(state_t state, const ros::Time& reference_time, float stopping_trajectory_duration=2.0);
     void commandStop(const ros::TimerEvent &, float stopping_trajectory_duration=2.0);
     
 private:
     enum SamplingMethod {none, weighted_random, stratified, best_n};
+
+    // Collision Checker
+    std::shared_ptr<CollisionChecker> collision_checker_;
+
     // Init
-    bool initMap();
+    bool initGlobalMap();
+    bool initGMMMap(const std::shared_ptr<CollisionChecker> collision_checker);
     void getParams();
     void flagsCallback(const control_arch::FsmFlags::ConstPtr& msg);
     bool flagEnabledQ(const std::string& flag);
@@ -58,6 +64,8 @@ private:
     bool getNextReference(state_t& state, ros::Time& reference_time, float lookahead);
     void publishTrajectory(std::vector<state_t> traj_wpts, float interval, ros::Duration duration);
     void displayEscapePoints();
+     float findNearestNeighbor(const gu::Vec3& position, float neighbor[3]);
+    bool queryRadiusNeighbors(const gu::Vec3& position, double r,  std::vector<pcl::PointXYZ>* neighbors);
 
     //Collision avoidance
     bool obstacle_avoidance_on_;
@@ -68,7 +76,7 @@ private:
     void getPolynomials(const state_t& state, ros::Duration duration, std::vector<std::vector<double>>& coefficients); 
     void getPolynomialsWithPos(const state_t& state, gu::Vec3 goal_pos, double t_stop, std::vector<std::vector<double>>& coefficients);
     void populateTrajectory(const ros::Time &reference_time, int traj_length, const std::vector<std::vector<double>>& coefficients, ros::Duration duration, double step, std::vector<state_t> &traj);
-    bool checkTrajectoryCollisionGlobal(const std::vector<state_t>& traj);
+    bool checkTrajectoryCollision(const std::vector<state_t>& traj);
     bool checkTrajectoryHOD(const std::vector<std::vector<double>>& coefficients, ros::Duration& duration, std::vector<double> thresholds);
     bool checkAccelThreshold(const std::vector<std::vector<double>>& coefficients, ros::Duration &duration, double acc_threshold);
 
@@ -115,6 +123,7 @@ private:
     float stop_vel_weight_;
     float stop_angle_weight_;
     float stop_bias_;
+    std::string map_scope_;
    
     // Sample variables
     int sample_length_n;

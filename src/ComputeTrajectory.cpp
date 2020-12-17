@@ -195,15 +195,15 @@ void StoppingTrajectory::populateTrajectory(const ros::Time &reference_time,
 }
 
 /**
- * @brief Checks each point along a trajectory for collisions, using the global map.
+ * @brief Checks each point along a trajectory for collisions, using the specified map type.
  * Returns true if no collisions, false if collision detected.
  * */
-bool StoppingTrajectory::checkTrajectoryCollisionGlobal(const std::vector<state_t> &traj)
+bool StoppingTrajectory::checkTrajectoryCollision(const std::vector<state_t> &traj)
 {
   float nearest_dist;
   for (uint i = 0; i < traj.size(); i++)
   {
-    float dist = global_map_.find_nearest_neighbor(traj[i].pos(0), traj[i].pos(1), traj[i].pos(2));
+    float dist = findNearestNeighbor(traj[i].pos, NULL);
     if (dist < collision_radius_)
     {
       // std::cout << "Collision detected along trajectory, within " << dist << std::endl;

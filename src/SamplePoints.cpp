@@ -26,8 +26,7 @@ void StoppingTrajectory::getFreePoints(gu::Vec3& pos, gu::Vec3& vel,
                     std::vector<float>& costs) {  
   std::vector<gu::Vec3> free_escape_points;
   for(uint i = 0; i < escape_points.size(); i++){
-    float dist_from_obstacle = global_map_.find_nearest_neighbor(escape_points[i](0), 
-                        escape_points[i](1), escape_points[i](2));
+    float dist_from_obstacle = findNearestNeighbor(escape_points[i], NULL);
     // Keep escape point if not within collision_radius_
     if(dist_from_obstacle > collision_radius_) {
       costs.push_back(getCost(escape_points[i], pos, vel, dist_from_obstacle));

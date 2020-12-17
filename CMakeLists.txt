@@ -10,6 +10,7 @@ find_package(catkin REQUIRED COMPONENTS
       geometry_utils
       local_map_generator
       parameter_utils
+      collision_checker
 )
 
 catkin_package(
@@ -23,6 +24,7 @@ catkin_package(
             local_map_generator
             parameter_utils
             PCL
+            collision_checker
 )
 
 include_directories(include
