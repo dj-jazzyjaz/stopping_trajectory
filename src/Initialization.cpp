@@ -28,12 +28,14 @@ bool StoppingTrajectory::initialize(const ros::NodeHandle &n, const std::shared_
   getParams();
 
   if (!initGlobalMap()) return false;
-  if (!initGMMMap(collision_checker)) return false;
+  std::cout << "Init local map 1" << std::endl;
+  if (!initLocalMap(collision_checker)) return false;
+  std::cout << "Init local map 2" << std::endl;
   // TODO: Change back to this later
   /*if (map_scope_ == "global") {
     if (!initGlobalMap()) return false;
   } else if (map_scope_ == "local") {
-    if (!initGMMMap(collision_checker)) return false;
+    if (!initLocalMap(collision_checker)) return false;
   } else {
     ROS_ERROR("[Collision Checker] Invalid map type. Must be one of {global, gmm}");
     return false;
@@ -69,7 +71,7 @@ bool StoppingTrajectory::initGlobalMap()
   return true;
 }
 
-bool StoppingTrajectory::initGMMMap(const std::shared_ptr<CollisionChecker> collision_checker)
+bool StoppingTrajectory::initLocalMap(const std::shared_ptr<CollisionChecker> collision_checker)
 {
   if(collision_checker == nullptr) {
     ROS_ERROR("[Stopping Trajectory] Collision checker shared pointer was null, failed to initialize map");
@@ -77,6 +79,9 @@ bool StoppingTrajectory::initGMMMap(const std::shared_ptr<CollisionChecker> coll
   }
   collision_checker_ = collision_checker;
 
+  if(verbose_) {
+    std::cout << "[Stopping Trajectory] Local Map Initialized" << std::endl;
+  }
   // TODO: GMM Map
   return true;
 }

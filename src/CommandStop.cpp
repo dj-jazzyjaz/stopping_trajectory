@@ -141,7 +141,7 @@ void StoppingTrajectory::commandStop(const ros::TimerEvent &, float stopping_tra
   if(relevant_neighbors.size() > 0) visualizeNeighborhood(relevant_neighbors, neighbor_costs, ref_state.pos, ref_state.vel);
 
   if(relevant_neighbors.size() > 0 && vu::Min(neighbor_costs) < 0) {
-    ROS_ERROR("[CommandStop] Generate stopping command due to lack of neighbors");
+    ROS_ERROR("[CommandStop] Generate stopping command due to neighbor cost < 0");
     generateCollisionFreeWaypoints(ref_state, ref_time, stopping_trajectory_duration);
     if (publish_hover_after_stop_)
     {

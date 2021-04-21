@@ -156,7 +156,7 @@ float StoppingTrajectory::findNearestNeighbor(const gu::Vec3& position, float ne
 bool StoppingTrajectory::queryRadiusNeighbors(const gu::Vec3& position, double r,  std::vector<pcl::PointXYZ>* neighbors) {
     bool hasNeighbors;
     if (map_scope_ == "local") {
-        hasNeighbors = collision_checker_->local_map_kdtree_->local_map_->queryRadiusNeighbors(position.x(), position.y(), position.z(), r, neighbors);    
+        hasNeighbors = collision_checker_->local_map_kdtree_->local_map_->queryRadiusNeighbors(position.x(), position.y(), position.z(), r, neighbors);   
     } else {  // global
         hasNeighbors = global_map_.check_neighbor_in_radius(position.x(), position.y(), position.z(), r, neighbors);
     }

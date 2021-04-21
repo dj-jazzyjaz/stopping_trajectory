@@ -55,7 +55,7 @@ private:
 
     // Init
     bool initGlobalMap();
-    bool initGMMMap(const std::shared_ptr<CollisionChecker> collision_checker);
+    bool initLocalMap(const std::shared_ptr<CollisionChecker> collision_checker);
     void getParams();
     void flagsCallback(const control_arch::FsmFlags::ConstPtr& msg);
     bool flagEnabledQ(const std::string& flag);
@@ -64,7 +64,7 @@ private:
     bool getNextReference(state_t& state, ros::Time& reference_time, float lookahead);
     void publishTrajectory(std::vector<state_t> traj_wpts, float interval, ros::Duration duration);
     void displayEscapePoints();
-     float findNearestNeighbor(const gu::Vec3& position, float neighbor[3]);
+    float findNearestNeighbor(const gu::Vec3& position, float neighbor[3]);
     bool queryRadiusNeighbors(const gu::Vec3& position, double r,  std::vector<pcl::PointXYZ>* neighbors);
 
     //Collision avoidance
