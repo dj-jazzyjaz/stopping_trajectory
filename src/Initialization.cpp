@@ -118,7 +118,6 @@ void StoppingTrajectory::getParams()
   pu::get("debug/verbose", verbose_);
   pu::get("stopping/publish_hover_after_stop", publish_hover_after_stop_);
   pu::get("map_scope", map_scope_);
-  record_ = false;
   
   red_.a = 1;
   red_.r = 1;

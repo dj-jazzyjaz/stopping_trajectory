@@ -46,7 +46,8 @@ public:
     void generateWaypoints(state_t state, const ros::Time& reference_time, float stopping_trajectory_duration=1.0);
     void generateCollisionFreeWaypoints(state_t state, const ros::Time& reference_time, float stopping_trajectory_duration=2.0);
     void commandStop(const ros::TimerEvent &, float stopping_trajectory_duration=2.0);
-    
+    bool setUpFileWriting(const std::string& saveto_directory);
+
 private:
     enum SamplingMethod {none, weighted_random, stratified, best_n};
 
@@ -66,6 +67,7 @@ private:
     void displayEscapePoints();
     float findNearestNeighbor(const gu::Vec3& position, float neighbor[3]);
     bool queryRadiusNeighbors(const gu::Vec3& position, double r,  std::vector<pcl::PointXYZ>* neighbors);
+   
 
     //Collision avoidance
     bool obstacle_avoidance_on_;

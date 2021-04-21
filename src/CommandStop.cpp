@@ -138,6 +138,33 @@ void StoppingTrajectory::commandStop(const ros::TimerEvent &, float stopping_tra
     ref_state.vel.normalize().print();
   }
 
+//time, pos_x, pos_y, pos_z, vel_x, vel_y, vel_z, vel, hasNeighbors, distance, offset_angle, cost, stopped, neigh_x, neigh_y, neigh_z" << std::endl;
+  if (record_ && relevant_neighbors.size() > 0) {
+    gu::Vec3 curr_neighbor = relevant_neighbors[0];
+    gu::Vec3 neighbor_offset = curr_neighbor - ref_state.pos;
+    offset_angle = gu::math::acos(
+        neighbor_offset.dot(ref_state.vel)/(neighbor_offset.norm() * ref_state.vel.norm())
+    ); // Use the dot product cosine rule
+      
+    // Calculate the stop cost
+    stop_cost = stop_angle_weight_ * offset_angle + stop_dist_weight_ * neighbor_offset.norm() 
+      - stop_vel_weight_ * vel_norm - stop_bias_; 
+      
+    log_file_ << ref_time.toSec() <<","
+      <<  ref_state.pos(0) <<"," << ref_state.pos(1) <<"," << ref_state.pos(2)<< ","
+      <<  ref_state.vel(0) <<"," << ref_state.vel(1) <<"," << ref_state.vel(2)<< ","
+      <<  ref_state.vel.norm() << "," << true << "," 
+      << neighbor_offset.norm() << "," << offset_angle << "," << stop_cost << "," << (stop_cost < 0) << ","
+      << curr_neighbor.x() << "," << curr_neighbor.y() << "," << curr_neighbor.z() << std::endl;
+  } else if(record_) {
+    log_file_ << ref_time.toSec() <<","
+      <<  ref_state.pos(0) <<"," << ref_state.pos(1) <<"," << ref_state.pos(2)<< ","
+      <<  ref_state.vel(0) <<"," << ref_state.vel(1) <<"," << ref_state.vel(2)<< ","
+      <<  ref_state.vel.norm() << "," << false << "," 
+      << "0" << "," << "0" << "," << "0" << "," << false << ","
+      << "0" << "," << "0" << "," << "0" << std::endl;
+  }
+
   if(relevant_neighbors.size() > 0) visualizeNeighborhood(relevant_neighbors, neighbor_costs, ref_state.pos, ref_state.vel);
 
   if(relevant_neighbors.size() > 0 && vu::Min(neighbor_costs) < 0) {

@@ -162,4 +162,16 @@ bool StoppingTrajectory::queryRadiusNeighbors(const gu::Vec3& position, double r
     }
     return hasNeighbors;
 }
+
+bool StoppingTrajectory::setUpFileWriting(const std::string& saveto_directory)
+{
+  record_ = true;
+  
+  // stopping trajectory file
+  std::string filename = saveto_directory + std::string("/stopping_trajectory.csv");
+  log_file_.open(filename.c_str());
+  log_file_ << "time, pos_x, pos_y, pos_z, vel_x, vel_y, vel_z, vel, hasNeighbors, distance, offset_angle, cost, stopped, neigh_x, neigh_y, neigh_z" << std::endl;
+
+  std::cout << "Stopping trajectory data written to " << filename << std::endl;
+}
 } // namespace planner
