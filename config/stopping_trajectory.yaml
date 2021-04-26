@@ -9,10 +9,10 @@ cost_function:  # Weights for computing cost of escape points
 collision_radius: 0.2 # Used for checking collision of points on trajectories
 command_stop:
   stopping_radius: 0.3 # Minimum stopping radius
-  bias: 0.1 # Make larger to stop earlier (i.e., more likely to stop given current conditions).
-  dist_weight: 0.4 # Make larger to reward high distance from obstacle.
+  bias: 0.3 # Make larger to stop earlier (i.e., more likely to stop given current conditions).
+  dist_weight: 0.6 # Make larger to reward high distance from obstacle.
   angle_weight: 1.2 # Make larger to reward a large angle seperate between vehicle's current heading and direction of nearest obstacle
-  vel_weight: 0.3 # Make larger to penalize high velocities.
+  vel_weight: 0.4 # Make larger to penalize high velocities.
 escape_point_generation:
   grid_length: 1 # Scale of sample space length, which is based on velocity norm
   grid_width: 1 # Scale sample space width, TODO IMPROVE THIS COMMENT
@@ -31,4 +31,4 @@ debug:
   verbose: true # determine how much information to print to console
 stopping:
   publish_hover_after_stop: true # determine whether to publish a hover to FSM after stopping
-map_scope: local # one of {local, global}
+map_scope: global # one of {local, global}

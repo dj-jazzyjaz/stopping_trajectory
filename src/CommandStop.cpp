@@ -65,7 +65,7 @@ void StoppingTrajectory::commandStop(const ros::TimerEvent &, float stopping_tra
   float dist_from_obstacle = findNearestNeighbor(ref_state.pos, neigh_point);
   
   // Stop is distance is too small
-  if (dist_from_obstacle < stopping_radius_)
+  /*if (dist_from_obstacle < stopping_radius_)
   {
     ROS_WARN("[CommandStop] Generate stopping command because stop distance is too small");;
     ROS_INFO("[CommandStop] Distance from obstacle: %f, Stopping radius: %f", dist_from_obstacle, stopping_radius_);
@@ -76,7 +76,7 @@ void StoppingTrajectory::commandStop(const ros::TimerEvent &, float stopping_tra
       event_msg.data = "HoverEvent";
       event_pub_.publish(event_msg);
     }
-  }
+  }*/
 
   // Get points in neighbors
   double neighbor_radius = 3.0f;
@@ -120,7 +120,7 @@ void StoppingTrajectory::commandStop(const ros::TimerEvent &, float stopping_tra
   neighbor_costs = vu::Slice(neighbor_costs_sorted, 0, 10);
   
   // Print stuff 
-  int i = 0;
+  /*int i = 0;
   for(auto n: relevant_neighbors) {
     gu::Vec3 neighbor_offset = n - ref_state.pos;
     if (verbose_)
@@ -130,12 +130,13 @@ void StoppingTrajectory::commandStop(const ros::TimerEvent &, float stopping_tra
       std::cout << neighbor_costs[i] << std::endl;
     }
     i++;
-  }
+  }*/
 
   if (verbose_)
   {
-    std::cout << "Velocity" << std::endl;
+    std::cout << "Velocity ";
     ref_state.vel.normalize().print();
+    if(relevant_neighbors.size() > 0) std::cout << "Stop cost " << vu::Min(neighbor_costs) << std::endl;
   }
 
 //time, pos_x, pos_y, pos_z, vel_x, vel_y, vel_z, vel, hasNeighbors, distance, offset_angle, cost, stopped, neigh_x, neigh_y, neigh_z" << std::endl;
