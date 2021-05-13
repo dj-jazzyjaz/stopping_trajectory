@@ -27,19 +27,15 @@ bool StoppingTrajectory::initialize(const ros::NodeHandle &n, const std::shared_
   
   getParams();
 
-  if (!initGlobalMap()) return false;
-  std::cout << "Init local map 1" << std::endl;
-  if (!initLocalMap(collision_checker)) return false;
-  std::cout << "Init local map 2" << std::endl;
   // TODO: Change back to this later
-  /*if (map_scope_ == "global") {
+  if (map_scope_ == "global") {
     if (!initGlobalMap()) return false;
   } else if (map_scope_ == "local") {
     if (!initLocalMap(collision_checker)) return false;
   } else {
     ROS_ERROR("[Collision Checker] Invalid map type. Must be one of {global, gmm}");
     return false;
-  }*/
+  }
   
   if (!pu::get("frame_id/fixed", fixed_frame_id_))
   {

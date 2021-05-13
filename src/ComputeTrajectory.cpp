@@ -36,11 +36,14 @@ std::vector<double> StoppingTrajectory::getCoefficients(double pos, double vel, 
   gu::Mat44 A = gu::Mat44(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16);
 
   Eigen::Matrix<double, 4, 4> emat = A.eigen();
-  emat = emat.inverse();
-  gu::Mat44 inv = gu::MatrixNxNBase<double, 4>(emat);
+  Eigen::Matrix<double, 4, 4> emat_inv = emat.inverse();
+  gu::Mat44 inv = gu::MatrixNxNBase<double, 4>(emat_inv);
 
   gu::Vec4 B = gu::Vec4(-b1, -b2, -b3, -b4);
+  
+  
   gu::Vec4 x = inv * B;
+
   double c5 = x.data[0];
   double c6 = x.data[1];
   double c7 = x.data[2];

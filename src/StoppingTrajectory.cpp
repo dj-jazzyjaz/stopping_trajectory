@@ -131,6 +131,7 @@ void StoppingTrajectory::generateWaypoints(state_t state, const ros::Time &refer
 void StoppingTrajectory::publishTrajectory(std::vector<state_t> traj_wpts, float interval, ros::Duration duration)
 {
     control_arch::Waypoints msg;
+    
     Waypoints traj(traj_wpts, interval);
     traj.toMessage(msg);
 

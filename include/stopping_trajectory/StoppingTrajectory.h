@@ -21,6 +21,7 @@
 #include <cpp_utils/sample_utils.h>
 #include <std_msgs/String.h>
 #include <collision_checker/CollisionChecker.h>
+#include <Eigen/Core>
 
 namespace planner {
 namespace gu = geometry_utils;
@@ -47,6 +48,7 @@ public:
     void generateCollisionFreeWaypoints(state_t state, const ros::Time& reference_time, float stopping_trajectory_duration=2.0);
     void commandStop(const ros::TimerEvent &, float stopping_trajectory_duration=2.0);
     bool setUpFileWriting(const std::string& saveto_directory);
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
 private:
     enum SamplingMethod {none, weighted_random, stratified, best_n};
