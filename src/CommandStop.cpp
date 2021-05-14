@@ -132,13 +132,6 @@ void StoppingTrajectory::commandStop(const ros::TimerEvent &, float stopping_tra
     i++;
   }*/
 
-  if (verbose_)
-  {
-    std::cout << "Velocity ";
-    ref_state.vel.normalize().print();
-    if(relevant_neighbors.size() > 0) std::cout << "Stop cost " << vu::Min(neighbor_costs) << std::endl;
-  }
-
 //time, pos_x, pos_y, pos_z, vel_x, vel_y, vel_z, vel, hasNeighbors, distance, offset_angle, cost, stopped, neigh_x, neigh_y, neigh_z" << std::endl;
   if (record_ && relevant_neighbors.size() > 0) {
     gu::Vec3 curr_neighbor = relevant_neighbors[0];
@@ -167,6 +160,19 @@ void StoppingTrajectory::commandStop(const ros::TimerEvent &, float stopping_tra
   }
 
   if(relevant_neighbors.size() > 0) visualizeNeighborhood(relevant_neighbors, neighbor_costs, ref_state.pos, ref_state.vel);
+
+  if(relevant_neighbors.size() > 0 && verbose_) {
+    gu::Vec3 curr_neighbor = relevant_neighbors[0];
+    gu::Vec3 neighbor_offset = curr_neighbor - ref_state.pos;
+    offset_angle = gu::math::acos(
+        neighbor_offset.dot(ref_state.vel)/(neighbor_offset.norm() * ref_state.vel.norm())
+    ); // Use the dot product cosine rule
+      
+    // Calculate the stop cost
+    stop_cost = stop_angle_weight_ * offset_angle + stop_dist_weight_ * neighbor_offset.norm() 
+      - stop_vel_weight_ * vel_norm - stop_bias_; 
+    ROSINFO("[Command Stop] Dist: %.2f Angle: %.2f Velocity: %.2f Cost: %.2f", neighbor_offset.norm(), offset_angle, vel_norm,  stop_cost);
+  }
 
   if(relevant_neighbors.size() > 0 && vu::Min(neighbor_costs) < 0) {
     ROS_ERROR("[CommandStop] Generate stopping command due to neighbor cost < 0. Cost = %.3f", vu::Min(neighbor_costs));
