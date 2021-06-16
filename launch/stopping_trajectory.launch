@@ -19,7 +19,7 @@
 
   <param name="config_file" type="string" value="$(arg local_map_params_file)"/>
   <param name="calib_file"  type="string"
-          value="$(find sensor_calibration_record)/$(arg vehicle)/$(arg vehicle)_all_calibrations.yaml" />
+        value="$(find vehicle_configs)/$(arg vehicle)/calibration.yaml" />
   <param name="body_frame"  type="string" value="$(arg vehicle)/body"/>
   <param name="map_filename" value="$(find environments)/artificial/$(arg scenario).ply"/> 
   
